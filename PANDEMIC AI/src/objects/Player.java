@@ -16,4 +16,8 @@ public class Player {
 	public void draw() {
 		
 	}
+	
+	public City getPosition() {
+		return this.position;
+	}
 }

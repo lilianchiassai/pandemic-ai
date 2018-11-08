@@ -1,10 +1,16 @@
 package objects;
 
+import java.util.Set;
+import java.util.function.Predicate;
+
+import util.GameUtil;
+
 public class City {
 	private String name;
 	private int population;
 	private Desease desease;
 	private ResearchCenter researchCenter;
+	private Set<Cube> cubeSet;
 	
 	public City(String name, Desease desease, int population) {
 		this.name = name;
@@ -37,5 +43,13 @@ public class City {
 
 	public int getPopulation() {
 		return population;
+	}
+	
+	public Set<Cube> getCubeSet(Desease desease) {
+		return ((Set<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease)));
+	}
+
+	public void addCube(Cube cube) {
+		cubeSet.add(cube);
 	}
 }

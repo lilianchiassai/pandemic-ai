@@ -8,4 +8,8 @@ public class PropagationCard implements Card {
 	public PropagationCard(City city) {
 		this.city = city;
 	}
+	
+	public City getCity() {
+		return this.city;
+	}
 }

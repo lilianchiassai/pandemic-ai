@@ -2,6 +2,7 @@ package util;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
@@ -15,5 +16,7 @@ import objects.Reserve;
 import objects.Road;
 
 public class GameUtil {
-
+	public static Predicate<Cube> getCubePredicate(Desease desease) {
+		return (cube) -> (cube.getDesease() == desease);
+	}
 }

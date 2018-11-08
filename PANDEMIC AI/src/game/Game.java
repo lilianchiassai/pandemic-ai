@@ -1,17 +1,18 @@
 package game;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
 import objects.City;
+import objects.Cube;
 import objects.Desease;
 import objects.Player;
 import objects.Reserve;
@@ -22,7 +23,20 @@ import objects.card.PlayerCard;
 import objects.card.PropagationCard;
 
 public class Game {
+	
+	private static Logger logger = LogManager.getLogger(Game.class.getName());
+	
 	private static Game INSTANCE;
+	
+	private boolean over;
+	private boolean win;
+	private int eclosionCounter;
+	private int propagationSpeed;
+	private int epidemicCounter;
+	private int maxEclosionCounter = 7;
+	private Set<City> eclosionCities;
+	private City chainEclosion;
+	
 	private Graph<City, DefaultEdge> map;
 	private Reserve reserve;
 	private Set<Desease> deseaseSet;
@@ -30,10 +44,22 @@ public class Game {
 	private Deck playerDeck;
 	private List<Player> players;
 	private int numberOfPlayers;
+	private int currentPlayerIndex;
+	
 	
 	private Game(int numberOfPlayers, int difficulty){
+		logger.info("Instantiating new game.");
+		
+		//Game status
+		over = false;
+		win = false;
+		eclosionCounter=0;
+		propagationSpeed=2;
+		epidemicCounter=0;
+		eclosionCities = new HashSet<City>();
 		
 		// Instantiate deseases
+		logger.info("Loading deseases.");
 		Desease yellow = new Desease("Yellow");
 		Desease red = new Desease("Red");
 		Desease blue = new Desease("Blue");
@@ -45,9 +71,11 @@ public class Game {
 		this.deseaseSet.add(black);
 		
 		// Instantiate Reserve
+		logger.info("Building reserve.");
 		this.reserve = new Reserve(this.deseaseSet);
 		
 		// Instantiate Cities
+		logger.info("Creating city network.");
 		City sanFrancisco = new City("San Francisco", blue, 21000);
 		City chicago = new City("Chicago", blue, 21000);
 		City atlanta = new City("Atlanta", blue, 21000);
@@ -288,15 +316,18 @@ public class Game {
 		
 		map.addEdge(seoul, beijing);
 		
-		System.out.println(map.edgeSet().size());
+		
 		// Create players
+		logger.info(numberOfPlayers+" new players in Atlanta.");
 		this.numberOfPlayers = numberOfPlayers;
-		this.players = new ArrayList<Player>();
+		this.players = new LinkedList<Player>();
 		for(int i=0; i< this.numberOfPlayers; i++) {
 			players.add(new Player(atlanta));
 		}
+		this.currentPlayerIndex = 0;
 		
 		// Create decks
+		logger.info("Shuffling decks");
 		propagationDeck = new Deck(PropagationCard.class); 
 		playerDeck = new Deck(PlayerCard.class); 
 		for(City city : map.vertexSet()) {
@@ -309,6 +340,7 @@ public class Game {
 		propagationDeck.shuffle();
 		
 		// Deal cards to players
+		logger.info("Dealing two cards to each player.");
 		playerDeck.shuffle();
 		for(Player player : players) {
 			player.draw();
@@ -316,11 +348,27 @@ public class Game {
 		}
 		
 		// Add Epidemic cards and rebuild deck
+		logger.info("Splitting player deck.");
 		List<Deck> deckList = playerDeck.split(difficulty);
 		for(Deck subdeck : deckList) {
 			subdeck.addOnTop(new EpidemicCard());
 			subdeck.shuffle();
 			playerDeck.addOnTop(subdeck);
+		}
+		
+		// Add research center on atlanta
+		logger.info("Building a new Research Center in Atlanta.");
+		this.reserve.getResearchCenter().build(atlanta);
+		
+		// Draw 9 propagation card
+		for (int i = 3; i>0; i--) {
+			for (int k = 0; k<3; k++) {
+				PropagationCard card = (PropagationCard) this.propagationDeck.draw();
+				for(int j = 0; j<i; j++) {
+					this.infect(card.getCity());
+				}
+				this.propagationDeck.discard(card);
+			}
 		}
 		
 	}
@@ -332,10 +380,69 @@ public class Game {
 		return INSTANCE;
 	}
 	
+	private void infect(City city) {
+		infect(city, city.getDesease());
+	}
 	
+	private void infect(City city, Desease desease) {
+		//Check if eclosion
+		Set<Cube> cubeSet = city.getCubeSet(desease);
+		if(cubeSet.size() == 3) {
+			eclosion(city, desease);
+		} else {
+			Cube cube = reserve.getCube(desease);
+			if(cube != null) {
+				city.addCube(cube);
+			} else {
+				lose();
+			}
+		}
+	}
 	
-	public static void main(String[] args) {
-		new Game(4,5);
-		
+	private void eclosion(City city, Desease desease) {
+		logger.info("Eclosion in "+city.getName());
+		eclosionCounter++;
+		if(eclosionCounter > maxEclosionCounter) {
+			lose();
+		} else {
+			if(chainEclosion == null) {
+				chainEclosion = city;
+			}
+			eclosionCities.add(city);
+			for(DefaultEdge edge : map.outgoingEdgesOf(city)) {
+				City target = map.getEdgeTarget(edge);
+				if(chainEclosion == null || !eclosionCities.contains(target)) {
+					logger.info("Desease is spreading "+city.getName());
+					infect(target, desease);
+				}
+			}
+		}
+		if(chainEclosion == city) {
+			eclosionCities.clear();
+		}
+	}
+	
+	private void endTurn() {
+		//current Player draws
+		//resolve epidemy if any
+		//propagation
+	}
+
+	
+	private void lose() {
+		this.over = true;
+		this.win = false;
+	}
+	
+	public boolean isOver() {
+		return this.over;
+	}
+	
+	public boolean isWin() {
+		return this.win;
+	}
+	
+	public Player getCurrentPlayer() {
+		return players.get(currentPlayerIndex);
 	}
 }

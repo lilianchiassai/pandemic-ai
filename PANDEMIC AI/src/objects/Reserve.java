@@ -1,7 +1,10 @@
 package objects;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+
+import util.GameUtil;
 
 public class Reserve {
 	private Set<Cube> cubeSet;
@@ -25,15 +28,31 @@ public class Reserve {
 		return cubeSet;
 	}
 
-	public void setCubeSet(Set<Cube> cubeSet) {
-		this.cubeSet = cubeSet;
-	}
-
 	public Set<ResearchCenter> getResearchCenterSet() {
 		return researchCenterSet;
 	}
 
-	public void setResearchCenterSet(Set<ResearchCenter> researchCenterSet) {
-		this.researchCenterSet = researchCenterSet;
+	public ResearchCenter getResearchCenter() {
+		if(researchCenterSet != null) {
+			Iterator<ResearchCenter> it = researchCenterSet.iterator();
+			if(it.hasNext()) {
+				ResearchCenter researchCenter = it.next();
+				it.remove();
+				return researchCenter;
+			}
+		}
+		return null;
+	}
+
+
+	public Cube getCube(Desease desease) {
+		Set<Cube> deseaseCubeSet = (Set<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease));
+		if(deseaseCubeSet != null && deseaseCubeSet.size()>0) {
+			Iterator<Cube> it = deseaseCubeSet.iterator();
+			Cube cube = it.next();
+			it.remove();
+			return cube;
+		}
+		return null;
 	}
 }
