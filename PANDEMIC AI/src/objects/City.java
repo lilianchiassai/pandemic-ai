@@ -1,7 +1,9 @@
 package objects;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import util.GameUtil;
 
@@ -16,12 +18,14 @@ public class City {
 		this.name = name;
 		this.desease = desease;
 		this.population = population;
+		this.cubeSet = new HashSet<Cube>();
 	}
 	
 	public City(String name, Desease desease, int population, ResearchCenter researchCenter) {
 		this.name = name;
 		this.desease = desease;
 		this.population = population;
+		this.cubeSet = new HashSet<Cube>();
 		this.setResearchCenter(researchCenter);
 	}
 
@@ -46,10 +50,18 @@ public class City {
 	}
 	
 	public Set<Cube> getCubeSet(Desease desease) {
-		return ((Set<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease)));
+		return ((Stream<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease))).collect(Collectors.toSet());
 	}
 
 	public void addCube(Cube cube) {
 		cubeSet.add(cube);
+	}
+
+	public boolean hasResearchCenter() {
+		return this.researchCenter != null;
+	}
+
+	public void removeCube(Cube cube) {
+		cubeSet.remove(cube);
 	}
 }

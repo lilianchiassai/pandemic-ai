@@ -12,11 +12,55 @@ import org.jgrapht.graph.SimpleGraph;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
+import objects.Player;
 import objects.Reserve;
 import objects.Road;
+import objects.card.Card;
+import objects.card.CityCard;
 
 public class GameUtil {
 	public static Predicate<Cube> getCubePredicate(Desease desease) {
 		return (cube) -> (cube.getDesease() == desease);
 	}
+	
+	public static Predicate<? super Card> getCityCardPredicate() {
+		return (card) -> (card.getClass().isAssignableFrom(CityCard.class));
+	}
+	
+	
+	public static Predicate<? super Card> getCityCardPredicate(City city) {
+		return (card) -> (card.getClass().isAssignableFrom(CityCard.class) && ((CityCard)card).getCity() == city );
+	}
+
+	public static Predicate<? super CityCard> getCityCardPredicate(Desease desease) {
+		return (card) -> (card.getClass().isAssignableFrom(CityCard.class) && ((CityCard)card).getCity().getDesease() == desease);
+	}
+
+	public static Predicate<? super City> getCityNamePredicate(String name) {
+		return (city) -> (city.getClass().isAssignableFrom(City.class) && ((City)city).getName().equals(name));
+	}
+
+	public static Predicate<? super Player> getPlayerNamePredicate(String name) {
+		return (player) -> (player.getClass().isAssignableFrom(Player.class) && ((Player)player).getName().equals(name));
+	}
+
+	public static Predicate<? super Desease> getDeseaseNamePredicate(String name) {
+		return (desease) -> (desease.getClass().isAssignableFrom(Desease.class) && ((Desease)desease).getName().equals(name));
+	}
+	
+	public static Graph<City, DefaultEdge> makeBidirectionnal(Graph<City, DefaultEdge> graph) {
+		for (City source: graph.vertexSet()) {
+		    Set<DefaultEdge> edges = graph.outgoingEdgesOf(source);
+		    for (DefaultEdge edge : edges) {
+		        City target = graph.getEdgeTarget(edge);
+		        boolean comingBack = graph.containsEdge(target, source);
+		        if(!graph.containsEdge(target, source)) {
+		        	graph.addEdge(target,  source);
+		        }
+		    }
+		}
+		return graph;
+	}
+	
+	
 }

@@ -12,4 +12,10 @@ public class PropagationCard implements Card {
 	public City getCity() {
 		return this.city;
 	}
+
+	@Override
+	public String getTitle() {
+		
+		return city.getName();
+	}
 }

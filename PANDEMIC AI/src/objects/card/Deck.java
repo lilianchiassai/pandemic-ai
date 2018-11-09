@@ -4,25 +4,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class Deck {
-	private List<Card> cardDeck;
+	protected LinkedList<Card> cardDeck;
 	private Deck discardPile;
 	private Class cardClass = null;
 	
 	public Deck(Class cardClass) {
-		this.cardDeck = new ArrayList<Card>();
-		this.discardPile = new Deck(cardClass,new ArrayList<Card>(), null);
+		this.cardDeck = new LinkedList<Card>();
+		this.discardPile = new Deck(cardClass,new LinkedList<Card>(), null);
 		this.cardClass = cardClass;
 	}
 	
-	public Deck(Class cardClass, List<Card> list) {
+	public Deck(Class cardClass, LinkedList<Card> list) {
 		this.cardDeck = list;
-		this.discardPile = new Deck(cardClass,new ArrayList<Card>(), null);
+		this.discardPile = new Deck(cardClass,new LinkedList<Card>(), null);
 		this.cardClass = cardClass;
 	}
 	
-	public Deck(Class cardClass, ArrayList<Card> cardDeck, Deck discardPile) {
+	public Deck(Class cardClass, LinkedList<Card> cardDeck, Deck discardPile) {
 		this.cardDeck = cardDeck;
 		this.discardPile = discardPile;
 		this.cardClass = cardClass;
@@ -45,9 +46,16 @@ public class Deck {
 	public boolean addOnTop(Deck deck) {
 		if(this.cardClass.isAssignableFrom(deck.getCardClass()) && deck.isDiscardPileEmpty()) {
 			this.cardDeck.addAll(deck.cardDeck);
+			deck.cardDeck.clear();
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean addOnTop(Set<Card> cardSet) {
+		this.cardDeck.addAll(cardSet);	
+		cardSet.clear();
+		return true;
 	}
 	
 	public LinkedList<Deck> split(int numberOfSubdecks) {
@@ -59,7 +67,7 @@ public class Deck {
 			if((numberOfSubdecks - rest) * subDeckSize == i) {
 				subDeckSize++;
 			}
-			Deck deck = new Deck(cardClass, new ArrayList<>(cardDeck.subList(i, i+subDeckSize)));
+			Deck deck = new Deck(cardClass, new LinkedList<>(cardDeck.subList(i, i+subDeckSize)));
 		    partitions.add(deck);
 		}
 		
@@ -68,18 +76,19 @@ public class Deck {
 	}
 	
 	public Card draw() {
-		Card card = cardDeck.get(0);
+		Card card = cardDeck.getLast();
 		cardDeck.remove(card);
 		return card;
 	}
 	
 	public Card drawBottomCard() {
-		Card card = cardDeck.get(cardDeck.size()-1);
+		Card card = cardDeck.getFirst();
 		cardDeck.remove(card);
 		return card;
 	}
 	
 	public boolean discard(Card card) {
+		this.cardDeck.remove(card);
 		return this.discardPile.addOnTop(card);
 	}
 	
@@ -88,10 +97,16 @@ public class Deck {
 	}
 	
 	public boolean isDiscardPileEmpty() {
-		return discardPile.isEmpty();
+		return discardPile == null || discardPile.isEmpty();
 	}
 	
 	public boolean isEmpty() {
 		return cardDeck.isEmpty();
 	}
+
+	public Deck getDiscardPile() {
+		return this.discardPile;
+	}
+
+	
 }

@@ -1,14 +1,17 @@
 package game;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedMultigraph;
 import org.jgrapht.graph.SimpleGraph;
 
 import objects.City;
@@ -21,12 +24,11 @@ import objects.card.Deck;
 import objects.card.EpidemicCard;
 import objects.card.PlayerCard;
 import objects.card.PropagationCard;
+import util.GameUtil;
 
 public class Game {
 	
 	private static Logger logger = LogManager.getLogger(Game.class.getName());
-	
-	private static Game INSTANCE;
 	
 	private boolean over;
 	private boolean win;
@@ -47,7 +49,7 @@ public class Game {
 	private int currentPlayerIndex;
 	
 	
-	private Game(int numberOfPlayers, int difficulty){
+	public Game(int numberOfPlayers, int difficulty){
 		logger.info("Instantiating new game.");
 		
 		//Game status
@@ -131,7 +133,7 @@ public class Game {
 		
 		
 		// Create map
-		map = new SimpleGraph<>(DefaultEdge.class);
+		map = new DirectedMultigraph<>(DefaultEdge.class);
 		map.addVertex(sanFrancisco);
 		map.addVertex(chicago);
 		map.addVertex(atlanta);
@@ -187,142 +189,104 @@ public class Game {
 		map.addEdge(sanFrancisco, losAngeles);
 		map.addEdge(sanFrancisco, tokyo);
 		map.addEdge(sanFrancisco, manila);
-		map.addEdge(sanFrancisco, chicago);
-		
+		map.addEdge(sanFrancisco, chicago);	
 		map.addEdge(chicago, losAngeles);
 		map.addEdge(chicago, mexicoCity);
 		map.addEdge(chicago, atlanta);
-		map.addEdge(chicago, montreal);
-		
+		map.addEdge(chicago, montreal);	
 		map.addEdge(montreal, washington);
-		map.addEdge(montreal, newYork);
-		
+		map.addEdge(montreal, newYork);	
 		map.addEdge(newYork, london);
 		map.addEdge(newYork, washington);
-		map.addEdge(newYork, madrid);
-		
+		map.addEdge(newYork, madrid);	
 		map.addEdge(washington, atlanta);
-		map.addEdge(washington, miami);
-		
-		map.addEdge(atlanta, miami);
-		
+		map.addEdge(washington, miami);	
+		map.addEdge(atlanta, miami);	
 		map.addEdge(losAngeles, mexicoCity);
-		map.addEdge(losAngeles, sydney);
-		
+		map.addEdge(losAngeles, sydney);		
 		map.addEdge(mexicoCity, miami);
 		map.addEdge(mexicoCity, bogota);
-		map.addEdge(mexicoCity, lima);
-		
+		map.addEdge(mexicoCity, lima);		
 		map.addEdge(bogota, miami);
 		map.addEdge(bogota, lima);
 		map.addEdge(bogota, buenosAires);
-		map.addEdge(bogota, saoPaulo);
-		
-		map.addEdge(lima, santiago);
-		
-		map.addEdge(buenosAires, saoPaulo);
-		
+		map.addEdge(bogota, saoPaulo);		
+		map.addEdge(lima, santiago);		
+		map.addEdge(buenosAires, saoPaulo);		
 		map.addEdge(saoPaulo, lagos);
-		map.addEdge(saoPaulo, madrid);
-		
+		map.addEdge(saoPaulo, madrid);		
 		map.addEdge(london, madrid);
 		map.addEdge(london, paris);
-		map.addEdge(london, essen);
-		
+		map.addEdge(london, essen);		
 		map.addEdge(madrid, paris);
-		map.addEdge(madrid, algers);
-		
+		map.addEdge(madrid, algers);		
 		map.addEdge(paris, essen);
 		map.addEdge(paris, algers);
-		map.addEdge(paris, milan);
-		
+		map.addEdge(paris, milan);		
 		map.addEdge(essen, milan);
-		map.addEdge(essen, saintPetersbourg);
-		
+		map.addEdge(essen, saintPetersbourg);		
 		map.addEdge(saintPetersbourg, moscow);
-		map.addEdge(saintPetersbourg, istanbul);
-		
-		map.addEdge(milan, istanbul);
-		
+		map.addEdge(saintPetersbourg, istanbul);		
+		map.addEdge(milan, istanbul);	
 		map.addEdge(istanbul, algers);
 		map.addEdge(istanbul, cairo);
 		map.addEdge(istanbul, baghdad);
-		map.addEdge(istanbul, moscow);
-		
+		map.addEdge(istanbul, moscow);		
 		map.addEdge(cairo, algers);
 		map.addEdge(cairo, baghdad);
 		map.addEdge(cairo, ryadh);
-		map.addEdge(cairo, khartoum);
-		
+		map.addEdge(cairo, khartoum);		
 		map.addEdge(khartoum, lagos);
 		map.addEdge(khartoum, khinshasa);
-		map.addEdge(khartoum, johannesburg);
-		
+		map.addEdge(khartoum, johannesburg);		
 		map.addEdge(khinshasa, lagos);
-		map.addEdge(khinshasa, johannesburg);
-		
+		map.addEdge(khinshasa, johannesburg);		
 		map.addEdge(baghdad, teheran);
 		map.addEdge(baghdad, karachi);
-		map.addEdge(baghdad, ryadh);
-		
+		map.addEdge(baghdad, ryadh);		
 		map.addEdge(teheran, moscow);
 		map.addEdge(teheran, karachi);
-		map.addEdge(teheran, delhi);
-		
+		map.addEdge(teheran, delhi);		
 		map.addEdge(karachi, ryadh);
 		map.addEdge(karachi, delhi);
-		map.addEdge(karachi, mumbai);
-		
+		map.addEdge(karachi, mumbai);		
 		map.addEdge(delhi, mumbai);
 		map.addEdge(delhi, chennai);
-		map.addEdge(delhi, kolkata);
-		
-		map.addEdge(mumbai, chennai);
-		
+		map.addEdge(delhi, kolkata);		
+		map.addEdge(mumbai, chennai);		
 		map.addEdge(chennai, kolkata);
 		map.addEdge(chennai, bangkok);
-		map.addEdge(chennai, jakarta);
-		
+		map.addEdge(chennai, jakarta);		
 		map.addEdge(kolkata, bangkok);
-		map.addEdge(kolkata, hongKong);
-		
+		map.addEdge(kolkata, hongKong);		
 		map.addEdge(bangkok, jakarta);
 		map.addEdge(bangkok, hongKong);
-		map.addEdge(bangkok, hoChiMinhCity);
-		
+		map.addEdge(bangkok, hoChiMinhCity);		
 		map.addEdge(jakarta, hoChiMinhCity);
-		map.addEdge(jakarta, sydney);
-		
+		map.addEdge(jakarta, sydney);		
 		map.addEdge(hoChiMinhCity, manila);
-		map.addEdge(hoChiMinhCity, hongKong);
-		
+		map.addEdge(hoChiMinhCity, hongKong);		
 		map.addEdge(manila, sydney);
 		map.addEdge(manila, hongKong);
-		map.addEdge(manila, taipei);
-		
+		map.addEdge(manila, taipei);		
 		map.addEdge(hongKong, taipei);
-		map.addEdge(hongKong, shangai);
-		
+		map.addEdge(hongKong, shangai);		
 		map.addEdge(shangai, taipei);
 		map.addEdge(shangai, beijing);
 		map.addEdge(shangai, seoul);
-		map.addEdge(shangai, tokyo);
-		
-		map.addEdge(taipei, osaka);
-		
-		map.addEdge(osaka, tokyo);
-		
+		map.addEdge(shangai, tokyo);	
+		map.addEdge(taipei, osaka);		
+		map.addEdge(osaka, tokyo);		
 		map.addEdge(tokyo, seoul);
-		
 		map.addEdge(seoul, beijing);
 		
-		
+		map = GameUtil.makeBidirectionnal(map);
 		// Create players
 		logger.info(numberOfPlayers+" new players in Atlanta.");
 		this.numberOfPlayers = numberOfPlayers;
 		this.players = new LinkedList<Player>();
 		for(int i=0; i< this.numberOfPlayers; i++) {
-			players.add(new Player(atlanta));
+			players.add(new Player(this, atlanta, "Player "+(i+1)));
 		}
 		this.currentPlayerIndex = 0;
 		
@@ -343,8 +307,9 @@ public class Game {
 		logger.info("Dealing two cards to each player.");
 		playerDeck.shuffle();
 		for(Player player : players) {
-			player.draw();
-			player.draw();
+			for(int i = 0; i<6-numberOfPlayers; i++) {
+				player.hand((PlayerCard) playerDeck.draw());
+			}
 		}
 		
 		// Add Epidemic cards and rebuild deck
@@ -364,38 +329,40 @@ public class Game {
 		for (int i = 3; i>0; i--) {
 			for (int k = 0; k<3; k++) {
 				PropagationCard card = (PropagationCard) this.propagationDeck.draw();
-				for(int j = 0; j<i; j++) {
-					this.infect(card.getCity());
-				}
+				this.infect(card.getCity(), i);
 				this.propagationDeck.discard(card);
 			}
 		}
 		
 	}
 	
-	public static Game getInstance() {
-		if(INSTANCE == null) {
-			INSTANCE = new Game(4,5);
-		}
-		return INSTANCE;
-	}
-	
 	private void infect(City city) {
-		infect(city, city.getDesease());
+		infect(city, 1, city.getDesease());
 	}
 	
-	private void infect(City city, Desease desease) {
+	private void infect(City city, int strength) {
+		infect(city, strength, city.getDesease());
+	}
+	
+	private void infect(City city, int strength, Desease desease) {
 		//Check if eclosion
-		Set<Cube> cubeSet = city.getCubeSet(desease);
-		if(cubeSet.size() == 3) {
-			eclosion(city, desease);
-		} else {
-			Cube cube = reserve.getCube(desease);
-			if(cube != null) {
-				city.addCube(cube);
+		logger.info("The "+desease.getName()+" desease spreads in "+city.getName()+".");
+		boolean eclosion = false;
+		int cubeCounter = 0;
+		while(cubeCounter<strength && !eclosion) {
+			Set<Cube> cubeSet = city.getCubeSet(desease);
+			if(cubeSet.size() == 3) {
+				eclosion = true;
+				eclosion(city, desease);
 			} else {
-				lose();
+				Cube cube = reserve.getCube(desease);
+				if(cube != null) {
+					city.addCube(cube);
+				} else {
+					lose();
+				}
 			}
+			cubeCounter++;
 		}
 	}
 	
@@ -413,7 +380,7 @@ public class Game {
 				City target = map.getEdgeTarget(edge);
 				if(chainEclosion == null || !eclosionCities.contains(target)) {
 					logger.info("Desease is spreading "+city.getName());
-					infect(target, desease);
+					infect(target, 1, desease);
 				}
 			}
 		}
@@ -422,10 +389,39 @@ public class Game {
 		}
 	}
 	
-	private void endTurn() {
+	public void endTurn() {
+		logger.info(getCurrentPlayer().getName()+" ends his turn.");
 		//current Player draws
-		//resolve epidemy if any
+		for(int i = 0; i<2; i++) {
+			PlayerCard card = (PlayerCard) playerDeck.draw();
+			if(card == null) {
+				lose();
+			}
+			if(card instanceof EpidemicCard) {
+				//do Epidemy
+				logger.info("New Epidemic... The world will soon come to an end !");
+				PropagationCard infectedCard = (PropagationCard) propagationDeck.drawBottomCard();
+				infect(infectedCard.getCity(), 3);
+				epidemicCounter++;
+				if(epidemicCounter == 3 || epidemicCounter == 5) {
+					propagationSpeed++;
+				}
+				propagationDeck.discard(infectedCard);
+				Deck propagationDiscardPile = propagationDeck.getDiscardPile();
+				propagationDiscardPile.shuffle();
+				propagationDeck.addOnTop(propagationDiscardPile);
+			} else {
+				getCurrentPlayer().hand(card);
+			}
+		}
+		
+		
 		//propagation
+		for(int i = 0; i<propagationSpeed; i++) {
+			PropagationCard card = (PropagationCard) this.propagationDeck.draw();
+			this.infect(card.getCity());
+			this.propagationDeck.discard(card);
+		}
 	}
 
 	
@@ -445,4 +441,58 @@ public class Game {
 	public Player getCurrentPlayer() {
 		return players.get(currentPlayerIndex);
 	}
+
+	public Reserve getReserve() {
+		return this.reserve;
+	}
+
+	public Graph<City, DefaultEdge> getMap() {
+		return this.map;
+	}
+
+	public Deck getPlayerDeck() {
+		return this.playerDeck;
+	}
+
+	public Player nextPlayer() {
+		currentPlayerIndex = (currentPlayerIndex+1) % numberOfPlayers;
+		logger.info(getCurrentPlayer().getName()+" starts a new turn.");
+		getCurrentPlayer().newTurn();
+		return getCurrentPlayer();
+	}
+
+	public City getCity(String cityName) {
+		Set<City> citySet = (Set<City>) this.map.vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
+		if(citySet != null) {
+			Iterator<City> it = citySet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
+
+	public Player getPlayer(String playerName) {
+		Set<Player> playerSet =  (Set<Player>) players.stream().filter(GameUtil.getPlayerNamePredicate(playerName)).collect(Collectors.toSet());
+		if(playerSet != null) {
+			Iterator<Player> it = playerSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
+
+	public Desease getDesease(String deseaseName) {
+		Set<Desease> deseaseSubSet = (Set<Desease>) deseaseSet.stream().filter(GameUtil.getDeseaseNamePredicate(deseaseName)).collect(Collectors.toSet());
+		if(deseaseSubSet != null) {
+			Iterator<Desease> it = deseaseSubSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
+	
+	
 }

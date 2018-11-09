@@ -1,5 +1,5 @@
 package objects.card;
 
-public class PlayerCard implements Card{
+public abstract class PlayerCard implements Card{
 	
 }

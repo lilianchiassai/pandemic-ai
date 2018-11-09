@@ -3,6 +3,7 @@ package objects;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import util.GameUtil;
 
@@ -46,13 +47,19 @@ public class Reserve {
 
 
 	public Cube getCube(Desease desease) {
-		Set<Cube> deseaseCubeSet = (Set<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease));
+		Set<Cube> deseaseCubeSet = (Set<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease)).collect(Collectors.toSet());
 		if(deseaseCubeSet != null && deseaseCubeSet.size()>0) {
 			Iterator<Cube> it = deseaseCubeSet.iterator();
 			Cube cube = it.next();
 			it.remove();
+			cubeSet.remove(cube);
 			return cube;
 		}
 		return null;
+	}
+
+
+	public void addCube(Cube cube) {
+		cubeSet.add(cube);
 	}
 }

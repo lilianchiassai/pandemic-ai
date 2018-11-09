@@ -6,4 +6,9 @@ public class EpidemicCard extends PlayerCard {
 		
 	}
 
+	@Override
+	public String getTitle() {
+		return "Epidemic";
+	}
+
 }

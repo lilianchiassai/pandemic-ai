@@ -4,10 +4,12 @@ As i know nothing about neural network and deep learning, I will start from scra
 
 The steps
 I Building a decent Pandemic Board game
-1. Initializing the game (create architecture classes, useful methods) is its simplest way : no event card, no character player
-2. Add log4j and comment this code
-3. Build the game engine : waiting for input to perform player actions and automatically performing game actions
-4. Build an interface to play pandemic and check everything runs smoothly
+1. Initializing the game (create architecture classes, useful methods) is its simplest way : no event card, no card limit, no character player
+2. Add log4j to track
+3. build the game mechanics : what the game do , effect of each action etc.
+4. Create the game engine : waiting for input to perform player actions and automatically performing game actions -> DONE
+5. Add eventhandling to throw event when : player hand is full, player can play event card
+6. Build an interface to play pandemic and check everything runs smoothly
 
 II Build a Monte Carlo Tree Search based AI and check if it works
 

@@ -2,12 +2,12 @@ package objects;
 
 public class Desease {
 	private boolean eradicated;
-	private boolean remedyFound;
+	private boolean cured;
 	private String name;
 	
 	public Desease(String name) {
 		this.eradicated = false;
-		this.remedyFound = false;
+		this.cured = false;
 		this.name = name;
 	}
 
@@ -15,12 +15,12 @@ public class Desease {
 		return name;
 	}
 
-	public boolean isRemedyFound() {
-		return remedyFound;
+	public boolean isCured() {
+		return cured;
 	}
 
-	public void findRemedy() {
-		this.remedyFound = true;
+	public void findCure() {
+		this.cured = true;
 	}
 
 	public boolean isEradicated() {
