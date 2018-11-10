@@ -2,9 +2,14 @@ package objects.card;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import objects.Desease;
+import util.GameUtil;
 
 public class Deck {
 	protected LinkedList<Card> cardDeck;
@@ -108,5 +113,18 @@ public class Deck {
 		return this.discardPile;
 	}
 
+	public List<Card> getCardDeck() {
+		return this.cardDeck;
+	}
 	
+	public Card getCard(String title) {
+		Set<Card> cardSet = (Set<Card>) cardDeck.stream().filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
+		if(cardSet != null) {
+			Iterator<Card> it = cardSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
 }

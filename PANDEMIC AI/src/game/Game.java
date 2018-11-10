@@ -1,9 +1,12 @@
 package game;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Observable;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,12 +15,11 @@ import org.apache.logging.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
-import org.jgrapht.graph.SimpleGraph;
 
+import objects.Character;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
-import objects.Player;
 import objects.Reserve;
 import objects.card.CityCard;
 import objects.card.Deck;
@@ -26,9 +28,10 @@ import objects.card.PlayerCard;
 import objects.card.PropagationCard;
 import util.GameUtil;
 
-public class Game {
+public class Game extends Observable{
 	
 	private static Logger logger = LogManager.getLogger(Game.class.getName());
+	private static Map<String, Object> notifyMap;
 	
 	private boolean over;
 	private boolean win;
@@ -44,12 +47,12 @@ public class Game {
 	private Set<Desease> deseaseSet;
 	private Deck propagationDeck;
 	private Deck playerDeck;
-	private List<Player> players;
+	private List<Character> players;
 	private int numberOfPlayers;
 	private int currentPlayerIndex;
 	
 	
-	public Game(int numberOfPlayers, int difficulty){
+	public Game(int numberOfPlayers, int difficulty) {
 		logger.info("Instantiating new game.");
 		
 		//Game status
@@ -284,11 +287,11 @@ public class Game {
 		// Create players
 		logger.info(numberOfPlayers+" new players in Atlanta.");
 		this.numberOfPlayers = numberOfPlayers;
-		this.players = new LinkedList<Player>();
+		this.players = new LinkedList<Character>();
 		for(int i=0; i< this.numberOfPlayers; i++) {
-			players.add(new Player(this, atlanta, "Player "+(i+1)));
+			players.add(new Character(this, atlanta, "Player "+(i+1)));
 		}
-		this.currentPlayerIndex = 0;
+		this.currentPlayerIndex = numberOfPlayers;
 		
 		// Create decks
 		logger.info("Shuffling decks");
@@ -306,7 +309,7 @@ public class Game {
 		// Deal cards to players
 		logger.info("Dealing two cards to each player.");
 		playerDeck.shuffle();
-		for(Player player : players) {
+		for(Character player : players) {
 			for(int i = 0; i<6-numberOfPlayers; i++) {
 				player.hand((PlayerCard) playerDeck.draw());
 			}
@@ -393,6 +396,7 @@ public class Game {
 		logger.info(getCurrentPlayer().getName()+" ends his turn.");
 		//current Player draws
 		for(int i = 0; i<2; i++) {
+			setChanged();
 			PlayerCard card = (PlayerCard) playerDeck.draw();
 			if(card == null) {
 				lose();
@@ -438,7 +442,7 @@ public class Game {
 		return this.win;
 	}
 	
-	public Player getCurrentPlayer() {
+	public Character getCurrentPlayer() {
 		return players.get(currentPlayerIndex);
 	}
 
@@ -454,7 +458,7 @@ public class Game {
 		return this.playerDeck;
 	}
 
-	public Player nextPlayer() {
+	public Character nextPlayer() {
 		currentPlayerIndex = (currentPlayerIndex+1) % numberOfPlayers;
 		logger.info(getCurrentPlayer().getName()+" starts a new turn.");
 		getCurrentPlayer().newTurn();
@@ -472,10 +476,10 @@ public class Game {
 		return null;
 	}
 
-	public Player getPlayer(String playerName) {
-		Set<Player> playerSet =  (Set<Player>) players.stream().filter(GameUtil.getPlayerNamePredicate(playerName)).collect(Collectors.toSet());
+	public Character getPlayer(String playerName) {
+		Set<Character> playerSet =  (Set<Character>) players.stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
 		if(playerSet != null) {
-			Iterator<Player> it = playerSet.iterator();
+			Iterator<Character> it = playerSet.iterator();
 			if(it.hasNext()) {
 				return it.next();
 			}
@@ -494,5 +498,25 @@ public class Game {
 		return null;
 	}
 	
-	
+	public void start() {
+		while(!this.isOver()) {
+			Character currentCharacter = this.nextPlayer();
+			logger.info(currentCharacter.getName()+" starts his turn.");
+			while(0 < currentCharacter.getCurrentActionCount()) {
+				setChanged();
+				notifyMap = new HashMap<String, Object>();
+				notifyMap.put("action", currentCharacter);
+				notifyObservers(notifyMap);
+			}
+			
+			this.endTurn();
+		}
+		if(this.isWin()) {
+			logger.info("You won.");
+		} else {
+			logger.info("You lost. Haha.");	
+		}
+		return;
+	}
+
 }

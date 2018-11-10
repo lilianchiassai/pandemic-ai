@@ -12,7 +12,7 @@ import org.jgrapht.graph.SimpleGraph;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
-import objects.Player;
+import objects.Character;
 import objects.Reserve;
 import objects.Road;
 import objects.card.Card;
@@ -40,8 +40,8 @@ public class GameUtil {
 		return (city) -> (city.getClass().isAssignableFrom(City.class) && ((City)city).getName().equals(name));
 	}
 
-	public static Predicate<? super Player> getPlayerNamePredicate(String name) {
-		return (player) -> (player.getClass().isAssignableFrom(Player.class) && ((Player)player).getName().equals(name));
+	public static Predicate<? super Character> getCharacterNamePredicate(String name) {
+		return (character) -> (character.getClass().isAssignableFrom(Character.class) && ((Character)character).getName().equals(name));
 	}
 
 	public static Predicate<? super Desease> getDeseaseNamePredicate(String name) {
@@ -60,6 +60,10 @@ public class GameUtil {
 		    }
 		}
 		return graph;
+	}
+
+	public static Predicate<? super Card> getCardTitlePredicate(String title) {
+		return (card) -> (card instanceof Card && ((Card)card).getTitle().equals(title));
 	}
 	
 	

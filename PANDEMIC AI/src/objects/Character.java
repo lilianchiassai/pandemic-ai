@@ -1,6 +1,8 @@
 package objects;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -16,10 +18,10 @@ import objects.card.Hand;
 import objects.card.PlayerCard;
 import util.GameUtil;
 
-public class Player {
+public class Character {
 	
-	private static Logger logger = LogManager.getLogger(Player.class.getName());
-	
+	private static Logger logger = LogManager.getLogger(Character.class.getName());
+	private static Map<String, Object> notifyMap;
 	City position;
 	Hand hand;
 	int actionCount;
@@ -27,7 +29,9 @@ public class Player {
 	String name;
 	Game game;
 	
-	public Player(Game game, City city, String name) {
+	
+	
+	public Character(Game game, City city, String name) {
 		this.position = city;
 		this.name = name;
 		this.actionCount = 4;
@@ -47,6 +51,11 @@ public class Player {
 	public void hand(PlayerCard card) {
 		logger.info(this.name +" draws "+card.getTitle());
 		hand.addOnTop(card);
+		if(this.getHand().getCardDeck().size()>7) {
+			notifyMap = new HashMap<String, Object>();
+			notifyMap.put("discard", this);
+			game.notifyObservers(notifyMap);
+		}
 	}
 	
 	public void newTurn() {
@@ -132,28 +141,28 @@ public class Player {
 		return false;
 	}
 	
-	public boolean shareKnowledge(Player player) {
+	public boolean shareKnowledge(Character character) {
 		CityCard cityCard = hand.getCityCard(position);
 		if(cityCard != null) {
-			giveCard(player, cityCard);
+			giveCard(character, cityCard);
 		} else {
-			cityCard = player.getHand().getCityCard(position);
+			cityCard = character.getHand().getCityCard(position);
 			if(cityCard != null) {
-				takeCard(player, cityCard);
+				takeCard(character, cityCard);
 			}
 		}
 		return false;
 	}
 	
-	private boolean giveCard(Player player, CityCard card) {
+	private boolean giveCard(Character character, CityCard card) {
 		this.hand.removeCard(card);
-		player.getHand().addOnTop(card);
+		character.getHand().addOnTop(card);
 		currentActionCount--;
 		return true;
 	}
 	
-	private boolean takeCard(Player player, CityCard card) {
-		player.getHand().removeCard(card);
+	private boolean takeCard(Character character, CityCard card) {
+		character.getHand().removeCard(card);
 		this.hand.addOnTop(card);
 		currentActionCount--;
 		return true;
