@@ -12,6 +12,10 @@ I Building a decent Pandemic Board game
 6. Build an interface to play pandemic and check everything runs smoothly
 
 II Build a Monte Carlo Tree Search based AI and check if it works
+1. Undertsanding MCTS algorithm https://int8.io/monte-carlo-tree-search-beginners-guide/
+2. Implementing the algorithm
+3. Testing & debugging
+4. Optimization
 
 III Build a neural network learning from the Monte Carlo Tree Search, Alphagozero's way
 
