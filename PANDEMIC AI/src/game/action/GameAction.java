@@ -2,7 +2,7 @@ package game.action;
 
 import java.util.Set;
 
-import game.Game;
+import gameStatus.Game;
 
 public abstract class GameAction {
 	

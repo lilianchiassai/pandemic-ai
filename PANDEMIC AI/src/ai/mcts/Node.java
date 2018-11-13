@@ -3,7 +3,7 @@ package ai.mcts;
 import java.util.ArrayList;
 import java.util.List;
 
-import game.Game;
+import gameStatus.Game;
 
 
 

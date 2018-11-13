@@ -5,7 +5,7 @@ import java.util.Set;
 
 import org.jgrapht.graph.DefaultEdge;
 
-import game.Game;
+import gameStatus.Game;
 import objects.City;
 
 public class Drive extends MoveAction {

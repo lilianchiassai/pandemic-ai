@@ -2,7 +2,7 @@ package ai.mcts;
 
 import java.util.ArrayList;
 
-import game.Game;
+import gameStatus.Game;
 
 public class MCTSNode<T> extends Node implements Comparable {
 	
@@ -76,6 +76,11 @@ public class MCTSNode<T> extends Node implements Comparable {
 	
 	public boolean isVisited() {
 		return this.victoryCount>0;
+	}
+	
+	public MCTSNode clone() {
+		//todo
+		return this;
 	}
 
 	@Override

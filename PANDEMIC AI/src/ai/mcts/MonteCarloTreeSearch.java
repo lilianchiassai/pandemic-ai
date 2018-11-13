@@ -2,7 +2,7 @@ package ai.mcts;
 
 import java.util.Collections;
 
-import game.Game;
+import gameStatus.Game;
 
 public class MonteCarloTreeSearch {
 	MCTSNode<Game> root;
@@ -33,7 +33,7 @@ public class MonteCarloTreeSearch {
 	}
 	
 	public MCTSNode rollout(MCTSNode rolloutRootNode) {
-		MCTSNode node = rolloutRootNode;
+		MCTSNode node = (MCTSNode) rolloutRootNode.clone();
 		while(!node.isTerminal()) {
 			node = rolloutPolicy(node);
 		}

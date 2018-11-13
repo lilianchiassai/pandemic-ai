@@ -1,20 +1,18 @@
 package util;
 
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.EdgeSetFactory;
-import org.jgrapht.graph.SimpleGraph;
 
+import gameStatus.Game;
+import objects.Character;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
-import objects.Character;
-import objects.Reserve;
-import objects.Road;
 import objects.card.Card;
 import objects.card.CityCard;
 
@@ -66,5 +64,37 @@ public class GameUtil {
 		return (card) -> (card instanceof Card && ((Card)card).getTitle().equals(title));
 	}
 	
+	public static City getCity(Game game, String cityName) {
+		Set<City> citySet = (Set<City>) game.getGameStatus().getMap().vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
+		if(citySet != null) {
+			Iterator<City> it = citySet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
+
+	public static Character getPlayer(Game game, String playerName) {
+		Set<Character> playerSet =  (Set<Character>) game.getGameStatus().getCharacterList().stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
+		if(playerSet != null) {
+			Iterator<Character> it = playerSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
+
+	public static Desease getDesease(Game game, String deseaseName) {
+		Set<Desease> deseaseSubSet = (Set<Desease>) game.getGameStatus().getDeseaseSet().stream().filter(GameUtil.getDeseaseNamePredicate(deseaseName)).collect(Collectors.toSet());
+		if(deseaseSubSet != null) {
+			Iterator<Desease> it = deseaseSubSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
 	
 }

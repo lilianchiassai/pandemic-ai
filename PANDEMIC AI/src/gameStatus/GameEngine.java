@@ -1,4 +1,4 @@
-package game;
+package gameStatus;
 
 import java.util.Scanner;
 

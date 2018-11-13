@@ -1,15 +1,9 @@
-package game;
+package gameStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Observable;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,19 +11,10 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
 
-import game.action.Build;
-import game.action.CharterFlight;
-import game.action.Cure;
-import game.action.DirectFlight;
-import game.action.Discard;
-import game.action.Drive;
 import game.action.GameAction;
-import game.action.ShareKnowledge;
-import game.action.ShuttleFlight;
-import game.action.Treat;
+import gameStatus.GameStatus.GameStep;
 import objects.Character;
 import objects.City;
-import objects.Cube;
 import objects.Desease;
 import objects.Reserve;
 import objects.card.CityCard;
@@ -39,47 +24,44 @@ import objects.card.PlayerCard;
 import objects.card.PropagationCard;
 import util.GameUtil;
 
-public class Game extends Observable{
+public class GameStatus {
+
+	//Final
+	private static Logger logger = LogManager.getLogger(GameStatus.class.getName());
+	public enum GameStep {
+		play,
+		draw,
+		propagate,
+		win,
+		lose
+	}
 	
-	private static Logger logger = LogManager.getLogger(Game.class.getName());
-	private static Map<String, Object> notifyMap;
 	
-	private boolean over;
-	private boolean win;
+	
+	//Not final	
 	private int eclosionCounter;
 	private int propagationSpeed;
 	private int epidemicCounter;
-	private int maxEclosionCounter = 7;
-	private Set<City> eclosionCities;
-	private City chainEclosion;
-	private Set<Class<GameAction>> actionTypeSet;
 	
-	private Graph<City, DefaultEdge> map;
+	private List<Character> players;
+	private Graph<City, DefaultEdge> map;	
 	private Reserve reserve;
 	private Set<Desease> deseaseSet;
 	private Deck propagationDeck;
 	private Deck playerDeck;
-	private List<Character> players;
+	
 	private int numberOfPlayers;
 	private int currentPlayerIndex;
-	private enum TurnSteps {
-		play,
-		draw,
-		propagate
-	}
-	private TurnSteps currentTurnStep;
 	
+	private GameStep gameStep;
 	
-	public Game(int numberOfPlayers, int difficulty) {
+	public GameStatus(int numberOfPlayers) {
 		logger.info("Instantiating new game.");
 		
 		//Game status
-		over = false;
-		win = false;
 		eclosionCounter=0;
 		propagationSpeed=2;
 		epidemicCounter=0;
-		eclosionCities = new HashSet<City>();
 		
 		// Instantiate deseases
 		logger.info("Loading deseases.");
@@ -324,152 +306,17 @@ public class Game extends Observable{
 		}
 		propagationDeck.shuffle();
 		
-		// Deal cards to players
-		logger.info("Dealing two cards to each player.");
-		playerDeck.shuffle();
-		for(Character player : players) {
-			for(int i = 0; i<6-numberOfPlayers; i++) {
-				player.hand((PlayerCard) playerDeck.draw());
-			}
-		}
-		
-		// Add Epidemic cards and rebuild deck
-		logger.info("Splitting player deck.");
-		List<Deck> deckList = playerDeck.split(difficulty);
-		for(Deck subdeck : deckList) {
-			subdeck.addOnTop(new EpidemicCard());
-			subdeck.shuffle();
-			playerDeck.addOnTop(subdeck);
-		}
-		
-		// Add research center on atlanta
-		logger.info("Building a new Research Center in Atlanta.");
-		this.reserve.getResearchCenter().build(atlanta);
-		
-		// Draw 9 propagation card
-		for (int i = 3; i>0; i--) {
-			for (int k = 0; k<3; k++) {
-				PropagationCard card = (PropagationCard) this.propagationDeck.draw();
-				this.infect(card.getCity(), i);
-				this.propagationDeck.discard(card);
-			}
-		}
-		
 	}
 	
-	private void infect(City city) {
-		infect(city, 1, city.getDesease());
+	//Getters
+	public Set<Desease> getDeseaseSet() {
+		return this.deseaseSet;
 	}
 	
-	private void infect(City city, int strength) {
-		infect(city, strength, city.getDesease());
+	public List<Character> getCharacterList() {
+		return this.players;
 	}
 	
-	private void infect(City city, int strength, Desease desease) {
-		//Check if eclosion
-		logger.info("The "+desease.getName()+" desease spreads in "+city.getName()+".");
-		boolean eclosion = false;
-		int cubeCounter = 0;
-		while(cubeCounter<strength && !eclosion) {
-			Set<Cube> cubeSet = city.getCubeSet(desease);
-			if(cubeSet.size() == 3) {
-				eclosion = true;
-				eclosion(city, desease);
-			} else {
-				Cube cube = reserve.getCube(desease);
-				if(cube != null) {
-					city.addCube(cube);
-				} else {
-					lose();
-				}
-			}
-			cubeCounter++;
-		}
-	}
-	
-	private void eclosion(City city, Desease desease) {
-		logger.info("Eclosion in "+city.getName());
-		eclosionCounter++;
-		if(eclosionCounter > maxEclosionCounter) {
-			lose();
-		} else {
-			if(chainEclosion == null) {
-				chainEclosion = city;
-			}
-			eclosionCities.add(city);
-			for(DefaultEdge edge : map.outgoingEdgesOf(city)) {
-				City target = map.getEdgeTarget(edge);
-				if(chainEclosion == null || !eclosionCities.contains(target)) {
-					logger.info("Desease is spreading "+city.getName());
-					infect(target, 1, desease);
-				}
-			}
-		}
-		if(chainEclosion == city) {
-			eclosionCities.clear();
-		}
-	}
-	
-	public void drawEndTurn() {
-		//current Player draws
-				for(int i = 0; i<2; i++) {
-					setChanged();
-					PlayerCard card = (PlayerCard) playerDeck.draw();
-					if(card == null) {
-						lose();
-					}
-					if(card instanceof EpidemicCard) {
-						//do Epidemy
-						logger.info("New Epidemic... The world will soon come to an end !");
-						PropagationCard infectedCard = (PropagationCard) propagationDeck.drawBottomCard();
-						infect(infectedCard.getCity(), 3);
-						epidemicCounter++;
-						if(epidemicCounter == 3 || epidemicCounter == 5) {
-							propagationSpeed++;
-						}
-						propagationDeck.discard(infectedCard);
-						Deck propagationDiscardPile = propagationDeck.getDiscardPile();
-						propagationDiscardPile.shuffle();
-						propagationDeck.addOnTop(propagationDiscardPile);
-					} else {
-						getCurrentPlayer().hand(card);
-					}
-				}
-	}
-	
-	public void propagationEndTurn() {
-		//propagation
-		for(int i = 0; i<propagationSpeed; i++) {
-			PropagationCard card = (PropagationCard) this.propagationDeck.draw();
-			this.infect(card.getCity());
-			this.propagationDeck.discard(card);
-		}
-	}
-	
-	public void endTurn() {
-		logger.info(getCurrentPlayer().getName()+" ends his turn.");
-		drawEndTurn();
-		propagationEndTurn();
-	}
-
-	
-	private void lose() {
-		this.over = true;
-		this.win = false;
-	}
-	
-	public boolean isOver() {
-		return this.over;
-	}
-	
-	public boolean isWin() {
-		return this.win;
-	}
-	
-	public Character getCurrentPlayer() {
-		return players.get(currentPlayerIndex);
-	}
-
 	public Reserve getReserve() {
 		return this.reserve;
 	}
@@ -481,163 +328,49 @@ public class Game extends Observable{
 	public Deck getPlayerDeck() {
 		return this.playerDeck;
 	}
-
-	public Character nextPlayer() {
-		currentPlayerIndex = (currentPlayerIndex+1) % numberOfPlayers;
-		logger.info(getCurrentPlayer().getName()+" starts a new turn.");
-		getCurrentPlayer().newTurn();
-		return getCurrentPlayer();
-	}
-
-	public City getCity(String cityName) {
-		Set<City> citySet = (Set<City>) this.map.vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
-		if(citySet != null) {
-			Iterator<City> it = citySet.iterator();
-			if(it.hasNext()) {
-				return it.next();
-			}
-		}
-		return null;
-	}
-
-	public Character getPlayer(String playerName) {
-		Set<Character> playerSet =  (Set<Character>) players.stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
-		if(playerSet != null) {
-			Iterator<Character> it = playerSet.iterator();
-			if(it.hasNext()) {
-				return it.next();
-			}
-		}
-		return null;
-	}
-
-	public Desease getDesease(String deseaseName) {
-		Set<Desease> deseaseSubSet = (Set<Desease>) deseaseSet.stream().filter(GameUtil.getDeseaseNamePredicate(deseaseName)).collect(Collectors.toSet());
-		if(deseaseSubSet != null) {
-			Iterator<Desease> it = deseaseSubSet.iterator();
-			if(it.hasNext()) {
-				return it.next();
-			}
-		}
-		return null;
+	
+	public Deck getPropagationDeck() {
+		return this.propagationDeck;
 	}
 	
-	public void start() {
-		while(!this.isOver()) {
-			Character currentCharacter = this.nextPlayer();
-			logger.info(currentCharacter.getName()+" starts his turn.");
-			while(currentCharacter.canPlay()) {
-				setChanged();
-				notifyMap = new HashMap<String, Object>();
-				notifyMap.put("action", currentCharacter);
-				notifyObservers(notifyMap);
-			}
-			
-			this.endTurn();
-		}
-		if(this.isWin()) {
-			logger.info("You won.");
-		} else {
-			logger.info("You lost. Haha.");	
-		}
-		return;
-	}
-
-	public void updateStatus() {
-		//TODO refacotring previous code to use a step and status manager
-		switch(currentTurnStep) {
-			case play:
-				if(!this.getCurrentPlayer().canPlay()) {
-					currentTurnStep = TurnSteps.draw;
-				}
-			break;
-			case draw:
-				if(Discard.getValidGameActionSet(this, this.getCurrentPlayer()).size() == 0) {
-					currentTurnStep = TurnSteps.propagate;
-				}
-			break;
-			case propagate:
-				propagationEndTurn();
-				nextPlayer();
-				currentTurnStep = TurnSteps.draw;
-			break;
-			default:
-				break;
-		}
+	public int getEclosionCounter() {
+		return eclosionCounter;
 	}
 	
-	public ArrayList<Game> getAllPossibleNextGames() {
-		ArrayList<Game> resultList = new ArrayList<Game>();
-		Game game;
-		try {
-			game = (Game) this.clone();
-			game.updateStatus();
-			
-			Set<GameAction> actionSet = game.getAllPossibleActions();
-			
-			if(actionSet == null || actionSet.size() ==0) {
-				return resultList;
-			} else {
-				for(GameAction action : actionSet) {
-					Game nodeGame = (Game) game.clone();
-					action.perform();
-					resultList.add(nodeGame);
-					resultList.addAll(nodeGame.getAllPossibleNextGames());	
-		
-				}
-			}
-			
-			return resultList;
-		} catch (CloneNotSupportedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return null;
-		}
-		
+	public int getEpidemicCounter() {
+		return epidemicCounter;
 	}
 	
-	private Set<GameAction> getAllPossibleActions() {
-		Set<GameAction> actionSet = new HashSet<GameAction>();
-		for(Character character : players) {
-			actionSet.addAll(Discard.getValidGameActionSet(this, character));
-			if(actionSet.size() >= 0 ) {
-				return actionSet;
-			}
-		}
-		if(!this.getCurrentPlayer().canPlay()) {
-			return null;
-		}
-		for(Class actionClass: this.actionTypeSet) {
-			if (actionClass.isAssignableFrom(Drive.class)) {
-				actionSet.addAll(Drive.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(DirectFlight.class)) {
-				actionSet.addAll(DirectFlight.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(CharterFlight.class)) {
-				actionSet.addAll(CharterFlight.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(ShuttleFlight.class)) {
-				actionSet.addAll(ShuttleFlight.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(Treat.class)) {
-				actionSet.addAll(Treat.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(ShareKnowledge.class)) {
-				actionSet.addAll(ShareKnowledge.getValidGameActionSet(this));
-			} else if (actionClass.isAssignableFrom(Cure.class)) {
-				actionSet.addAll(Cure.getValidGameActionSet(this));
-			}  else if (actionClass.isAssignableFrom(Build.class)) {
-				actionSet.addAll(Build.getValidGameActionSet(this));
-			}
-		}
-		return actionSet;
-	}
-
-	public boolean equals(Game game) {
-		return false;
-	}
-
-	public Set<Desease> getDeseaseSet() {
-		return this.deseaseSet;
+	public int getPropagationSpeed() {
+		return propagationSpeed;
 	}
 	
-	public List<Character> getCharacterList() {
-		return this.players;
+	public GameStep getGameStep() {
+		return this.gameStep;
+	}
+	
+	public Character getCurrentPlayer() {
+		return players.get(currentPlayerIndex);
+	}
+
+	//Setters
+	public void increaseCurrentPlayerIndex() {
+		currentPlayerIndex = (currentPlayerIndex + 1) % numberOfPlayers;
+	}
+	
+	public void increaseEclosionCounter() {
+		eclosionCounter++;
+	}
+	
+	public void increaseEpidemicCounter() {
+		epidemicCounter++;
+	}
+	
+	public void increasePropagationSpeed() {
+		propagationSpeed++;
+	}
+
+	public void setGameStep(GameStep gameStep) {
+		this.gameStep = gameStep;
 	}
 }

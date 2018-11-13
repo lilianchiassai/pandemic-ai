@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import game.Game;
+import gameStatus.Game;
 import objects.Desease;
 import objects.card.Card;
 import objects.card.CityCard;

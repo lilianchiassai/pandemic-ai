@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import game.Game;
+import gameStatus.Game;
 import objects.City;
 import util.GameUtil;
 

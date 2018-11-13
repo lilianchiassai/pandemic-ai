@@ -3,7 +3,7 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import game.Game;
+import gameStatus.Game;
 import objects.City;
 import objects.ResearchCenter;
 import objects.card.Card;

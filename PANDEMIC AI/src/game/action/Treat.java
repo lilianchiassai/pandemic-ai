@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import game.Game;
+import gameStatus.Game;
 import objects.Cube;
 import objects.Desease;
 import objects.card.Card;

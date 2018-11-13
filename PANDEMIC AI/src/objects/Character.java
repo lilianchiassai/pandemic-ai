@@ -11,7 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jgrapht.graph.DefaultEdge;
 
-import game.Game;
+import gameStatus.Game;
+import gameStatus.GameStatus;
 import objects.card.Card;
 import objects.card.CityCard;
 import objects.card.Hand;
@@ -27,16 +28,16 @@ public class Character {
 	int actionCount;
 	int currentActionCount;
 	String name;
-	Game game;
+	GameStatus gameStatus;
 	
 	
 	
-	public Character(Game game, City city, String name) {
+	public Character(GameStatus gameStatus, City city, String name) {
 		this.position = city;
 		this.name = name;
 		this.actionCount = 4;
 		this.currentActionCount = 0;
-		this.game=game;
+		this.gameStatus=gameStatus;
 		this.hand= new Hand();
 	}
 	
@@ -201,5 +202,7 @@ public class Character {
 	public boolean canPlay() {
 		return this.currentActionCount>0;
 	}
+	
+	
 
 }
