@@ -1,11 +1,14 @@
 package ai.mcts;
 
+import java.util.Collections;
+
 import game.Game;
 
 public class MonteCarloTreeSearch {
 	MCTSNode<Game> root;
 	int timeLimit;
 	int iterationTime;
+	MCTSNode rolloutRootNode;
 	
 	public MonteCarloTreeSearch(Game gameState, int timeLimit) {
 		this.root = new MCTSNode(gameState);
@@ -32,37 +35,54 @@ public class MonteCarloTreeSearch {
 	public MCTSNode rollout(MCTSNode rolloutRootNode) {
 		MCTSNode node = rolloutRootNode;
 		while(!node.isTerminal()) {
-			//TODO isTerminal method expands the node
 			node = rolloutPolicy(node);
 		}
 		return node;
 	}
 	
 	public MCTSNode rolloutPolicy(MCTSNode node) {
-		return (MCTSNode) node.getChildren().get((int) ((Math.random() * 10)/10));
+		return (MCTSNode) node.getChildren().get(((int) ((Math.random() * 10)/10))*node.getChildren().size());
 	}
 	
-	public void backpropagate(MCTSNode node, MCTSNode terminalNode) {
-		if(node.isRoot()) {
+	public void backpropagate(MCTSNode leaf, MCTSNode terminalNode) {
+		if(leaf.isRoot()) {
 			return;
 		}
-		node.updateStats(node, terminalNode);
-		backpropagate((MCTSNode) node.getParent(), terminalNode);
+		((MCTSNode<Game>) leaf.getParent()).updateStats(terminalNode);
+		leaf.updateStats(terminalNode);
 	}
 	
 	public MCTSNode bestChild(MCTSNode node) {
-		// TODO return child with max number of visits
+		//Performed through children sorting : the maxed uct child is always the first
+		double max = 0;
+		MCTSNode result = null;
+		for(Object child : node.getChildren()) {
+			if(max<((MCTSNode)child).getVisitCount()) {
+				max = ((MCTSNode)child).getVisitCount();
+				result =(MCTSNode) child;
+			}
+		}
 		return (MCTSNode) node.getChildren().get(0);
 	}
 	
 	public MCTSNode bestUCTChild(MCTSNode node) {
-		// TODO return node maximizing UCT(vi,v) = Q(vi)/N(vi) + C * square_root(log(N(v))/N(vi))
-		return (MCTSNode) node.getChildren().get(0);
+		//TODO sort children list to perform a quicker max ?
+		double max = 0;
+		MCTSNode result = null;
+		for(Object child : node.getChildren()) {
+			if(max<((MCTSNode)child).getUct()) {
+				max = ((MCTSNode)child).getUct();
+				result =(MCTSNode) child;
+			}
+		}
+		return result;
 	}
+	
+	
 	
 	public MCTSNode bestUnvisitedChild(MCTSNode node) {
 		//TODO pick at random only between unvisited nodes
-		return (MCTSNode) node.getChildren().get((int) ((Math.random() * 10)/10));
+		return (MCTSNode) node.getChildren().get(((int) ((Math.random() * 10)/10))*node.getChildren().size());
 	}
 	
 	public boolean resourceAvailable() {

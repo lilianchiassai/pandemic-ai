@@ -1,5 +1,6 @@
 package game;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -16,6 +17,16 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
 
+import game.action.Build;
+import game.action.CharterFlight;
+import game.action.Cure;
+import game.action.DirectFlight;
+import game.action.Discard;
+import game.action.Drive;
+import game.action.GameAction;
+import game.action.ShareKnowledge;
+import game.action.ShuttleFlight;
+import game.action.Treat;
 import objects.Character;
 import objects.City;
 import objects.Cube;
@@ -41,6 +52,7 @@ public class Game extends Observable{
 	private int maxEclosionCounter = 7;
 	private Set<City> eclosionCities;
 	private City chainEclosion;
+	private Set<Class<GameAction>> actionTypeSet;
 	
 	private Graph<City, DefaultEdge> map;
 	private Reserve reserve;
@@ -50,6 +62,12 @@ public class Game extends Observable{
 	private List<Character> players;
 	private int numberOfPlayers;
 	private int currentPlayerIndex;
+	private enum TurnSteps {
+		play,
+		draw,
+		propagate
+	}
+	private TurnSteps currentTurnStep;
 	
 	
 	public Game(int numberOfPlayers, int difficulty) {
@@ -392,40 +410,46 @@ public class Game extends Observable{
 		}
 	}
 	
-	public void endTurn() {
-		logger.info(getCurrentPlayer().getName()+" ends his turn.");
+	public void drawEndTurn() {
 		//current Player draws
-		for(int i = 0; i<2; i++) {
-			setChanged();
-			PlayerCard card = (PlayerCard) playerDeck.draw();
-			if(card == null) {
-				lose();
-			}
-			if(card instanceof EpidemicCard) {
-				//do Epidemy
-				logger.info("New Epidemic... The world will soon come to an end !");
-				PropagationCard infectedCard = (PropagationCard) propagationDeck.drawBottomCard();
-				infect(infectedCard.getCity(), 3);
-				epidemicCounter++;
-				if(epidemicCounter == 3 || epidemicCounter == 5) {
-					propagationSpeed++;
+				for(int i = 0; i<2; i++) {
+					setChanged();
+					PlayerCard card = (PlayerCard) playerDeck.draw();
+					if(card == null) {
+						lose();
+					}
+					if(card instanceof EpidemicCard) {
+						//do Epidemy
+						logger.info("New Epidemic... The world will soon come to an end !");
+						PropagationCard infectedCard = (PropagationCard) propagationDeck.drawBottomCard();
+						infect(infectedCard.getCity(), 3);
+						epidemicCounter++;
+						if(epidemicCounter == 3 || epidemicCounter == 5) {
+							propagationSpeed++;
+						}
+						propagationDeck.discard(infectedCard);
+						Deck propagationDiscardPile = propagationDeck.getDiscardPile();
+						propagationDiscardPile.shuffle();
+						propagationDeck.addOnTop(propagationDiscardPile);
+					} else {
+						getCurrentPlayer().hand(card);
+					}
 				}
-				propagationDeck.discard(infectedCard);
-				Deck propagationDiscardPile = propagationDeck.getDiscardPile();
-				propagationDiscardPile.shuffle();
-				propagationDeck.addOnTop(propagationDiscardPile);
-			} else {
-				getCurrentPlayer().hand(card);
-			}
-		}
-		
-		
+	}
+	
+	public void propagationEndTurn() {
 		//propagation
 		for(int i = 0; i<propagationSpeed; i++) {
 			PropagationCard card = (PropagationCard) this.propagationDeck.draw();
 			this.infect(card.getCity());
 			this.propagationDeck.discard(card);
 		}
+	}
+	
+	public void endTurn() {
+		logger.info(getCurrentPlayer().getName()+" ends his turn.");
+		drawEndTurn();
+		propagationEndTurn();
 	}
 
 	
@@ -502,7 +526,7 @@ public class Game extends Observable{
 		while(!this.isOver()) {
 			Character currentCharacter = this.nextPlayer();
 			logger.info(currentCharacter.getName()+" starts his turn.");
-			while(0 < currentCharacter.getCurrentActionCount()) {
+			while(currentCharacter.canPlay()) {
 				setChanged();
 				notifyMap = new HashMap<String, Object>();
 				notifyMap.put("action", currentCharacter);
@@ -519,4 +543,101 @@ public class Game extends Observable{
 		return;
 	}
 
+	public void updateStatus() {
+		//TODO refacotring previous code to use a step and status manager
+		switch(currentTurnStep) {
+			case play:
+				if(!this.getCurrentPlayer().canPlay()) {
+					currentTurnStep = TurnSteps.draw;
+				}
+			break;
+			case draw:
+				if(Discard.getValidGameActionSet(this, this.getCurrentPlayer()).size() == 0) {
+					currentTurnStep = TurnSteps.propagate;
+				}
+			break;
+			case propagate:
+				propagationEndTurn();
+				nextPlayer();
+				currentTurnStep = TurnSteps.draw;
+			break;
+			default:
+				break;
+		}
+	}
+	
+	public ArrayList<Game> getAllPossibleNextGames() {
+		ArrayList<Game> resultList = new ArrayList<Game>();
+		Game game;
+		try {
+			game = (Game) this.clone();
+			game.updateStatus();
+			
+			Set<GameAction> actionSet = game.getAllPossibleActions();
+			
+			if(actionSet == null || actionSet.size() ==0) {
+				return resultList;
+			} else {
+				for(GameAction action : actionSet) {
+					Game nodeGame = (Game) game.clone();
+					action.perform();
+					resultList.add(nodeGame);
+					resultList.addAll(nodeGame.getAllPossibleNextGames());	
+		
+				}
+			}
+			
+			return resultList;
+		} catch (CloneNotSupportedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return null;
+		}
+		
+	}
+	
+	private Set<GameAction> getAllPossibleActions() {
+		Set<GameAction> actionSet = new HashSet<GameAction>();
+		for(Character character : players) {
+			actionSet.addAll(Discard.getValidGameActionSet(this, character));
+			if(actionSet.size() >= 0 ) {
+				return actionSet;
+			}
+		}
+		if(!this.getCurrentPlayer().canPlay()) {
+			return null;
+		}
+		for(Class actionClass: this.actionTypeSet) {
+			if (actionClass.isAssignableFrom(Drive.class)) {
+				actionSet.addAll(Drive.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(DirectFlight.class)) {
+				actionSet.addAll(DirectFlight.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(CharterFlight.class)) {
+				actionSet.addAll(CharterFlight.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(ShuttleFlight.class)) {
+				actionSet.addAll(ShuttleFlight.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(Treat.class)) {
+				actionSet.addAll(Treat.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(ShareKnowledge.class)) {
+				actionSet.addAll(ShareKnowledge.getValidGameActionSet(this));
+			} else if (actionClass.isAssignableFrom(Cure.class)) {
+				actionSet.addAll(Cure.getValidGameActionSet(this));
+			}  else if (actionClass.isAssignableFrom(Build.class)) {
+				actionSet.addAll(Build.getValidGameActionSet(this));
+			}
+		}
+		return actionSet;
+	}
+
+	public boolean equals(Game game) {
+		return false;
+	}
+
+	public Set<Desease> getDeseaseSet() {
+		return this.deseaseSet;
+	}
+	
+	public List<Character> getCharacterList() {
+		return this.players;
+	}
 }

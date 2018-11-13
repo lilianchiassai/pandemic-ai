@@ -64,4 +64,20 @@ public class City {
 	public void removeCube(Cube cube) {
 		cubeSet.remove(cube);
 	}
+	
+	public void removeCube(Set<Cube> cubeSet2) {
+		cubeSet.removeAll(cubeSet2);	
+	}
+
+	public Set<Desease> getDeseaseSet() {
+		Set<Desease> deseaseSet = new HashSet<Desease>();
+		if(cubeSet!=null) {
+			for(Cube cube : cubeSet) {
+				deseaseSet.add(cube.getDesease());
+			}
+		}
+		return deseaseSet;
+	}
+
+	
 }

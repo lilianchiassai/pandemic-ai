@@ -66,7 +66,7 @@ public class Character {
 		return false;
 	}
 	
-	private boolean move(City city) {
+	public boolean move(City city) {
 		this.position = city;
 		currentActionCount--;
 		return true;
@@ -154,14 +154,14 @@ public class Character {
 		return false;
 	}
 	
-	private boolean giveCard(Character character, CityCard card) {
+	public boolean giveCard(Character character, CityCard card) {
 		this.hand.removeCard(card);
 		character.getHand().addOnTop(card);
 		currentActionCount--;
 		return true;
 	}
 	
-	private boolean takeCard(Character character, CityCard card) {
+	public boolean takeCard(Character character, CityCard card) {
 		character.getHand().removeCard(card);
 		this.hand.addOnTop(card);
 		currentActionCount--;
@@ -196,6 +196,10 @@ public class Character {
 	public void setCurrentActionCount(int i) {
 		this.currentActionCount = i;
 		
+	}
+
+	public boolean canPlay() {
+		return this.currentActionCount>0;
 	}
 
 }

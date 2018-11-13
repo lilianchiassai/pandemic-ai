@@ -1,17 +1,18 @@
 package ai.mcts;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import game.Game;
 
-public class MCTSNode<T> extends Node {
+public class MCTSNode<T> extends Node implements Comparable {
 	
 	boolean fullyExpanded;
 	boolean expanded;
 	boolean terminal;
 	int visitCount;
 	int victoryCount;
+	int visited;
+	double uct;
 	
 
 	public MCTSNode(T data) {
@@ -36,7 +37,7 @@ public class MCTSNode<T> extends Node {
 	}
 
 	private void expand() {
-		ArrayList<Game> gameChildren = ((Game)this.data).getAllPossibleNextGames();
+		ArrayList<Game> gameChildren = ((Game)this.getData()).getAllPossibleNextGames();
 		if(gameChildren == null || gameChildren.size()==0) {
 			terminal = true;
 			expanded = true;
@@ -49,12 +50,51 @@ public class MCTSNode<T> extends Node {
 		}
 	}
 
+	private void updateUct() {
+		this.uct = this.getVictoryCount()/this.getVisitCount() + Math.sqrt(Math.log10(((MCTSNode)this.getParent()).getVisitCount()/this.getVisitCount()));
+	}
 	
+	public double getUct() {
+		return this.uct;
+	}
 
-	public void updateStats(MCTSNode node, Node terminalNode) {
-		node.visitCount++;
+	public void updateStats(Node terminalNode) {
+		this.visitCount++;
 		if(((Game) terminalNode.getData()).isWin()) {
-			node.victoryCount++;
+			this.victoryCount++;
+		}
+		this.updateUct();
+	}
+
+	public double getVictoryCount() {
+		return this.victoryCount;
+	}
+	
+	public double getVisitCount() {
+		return this.victoryCount;
+	}
+	
+	public boolean isVisited() {
+		return this.victoryCount>0;
+	}
+
+	@Override
+	public int compareTo(Object o) {
+		if(this.isVisited() && ((MCTSNode) o).isVisited()) {
+			return 0;
+		} else if (this.isVisited()  && !((MCTSNode) o).isVisited()) {
+			return 1;
+		} else if (!this.isVisited()  && ((MCTSNode) o).isVisited()) {
+			return -1;
+		}
+		if(this.uct>((MCTSNode)o).getUct()) {
+			return 1;
+		} else if(this.uct == ((MCTSNode)o).getUct()) {
+			return 0;
+		} else {
+			return -1;
 		}
 	}
+
+	
 }

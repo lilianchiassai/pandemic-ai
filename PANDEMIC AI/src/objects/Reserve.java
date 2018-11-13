@@ -62,4 +62,9 @@ public class Reserve {
 	public void addCube(Cube cube) {
 		cubeSet.add(cube);
 	}
+
+
+	public void addCube(Set<Cube> cubeSet2) {
+		cubeSet.addAll(cubeSet2);
+	}
 }
