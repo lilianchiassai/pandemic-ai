@@ -3,37 +3,34 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import gameStatus.Game;
+import game.GameProperties;
+import game.GameStatus;
 import objects.City;
 
 public class ShuttleFlight extends MoveAction {
 	
-	public ShuttleFlight(Game game, City destination) {
-		super(game,destination);
+	public ShuttleFlight(GameStatus gameStatus, City destination) {
+		super(destination);
 	}
 	
 	@Override
-	public boolean perform() {
-		if(isValid() && super.perform()) {
-			return game.getCurrentPlayer().move(destination);
+	public boolean perform(GameStatus gameStatus) {
+		if(gameStatus.getCurrentPlayer().getPosition().hasResearchCenter() && destination.hasResearchCenter() && super.perform(gameStatus)) {
+			return gameStatus.getCurrentPlayer().setPosition(destination);
 		}
 		return false;
 	}
 
-	@Override
-	public boolean isValid() {
-		return game.getCurrentPlayer().getPosition().hasResearchCenter() && destination.hasResearchCenter();
-	}
 
-	public static Set<MoveAction> getValidGameActionSet(Game game) {
+	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		Set<MoveAction> shuttleFlightSet = new HashSet<MoveAction>();
-		if(game.getCurrentPlayer().getPosition().hasResearchCenter()) {
-			for(City city : game.getMap().vertexSet()) {
-				if(city != game.getCurrentPlayer().getPosition() && city.hasResearchCenter()) {
-					shuttleFlightSet.add(new ShuttleFlight(game, city));
+		if(gameStatus.getCurrentPlayer().getPosition().hasResearchCenter()) {
+			for(City city : GameProperties.map.vertexSet()) {
+				if(city != gameStatus.getCurrentPlayer().getPosition() && city.hasResearchCenter()) {
+					shuttleFlightSet.add(new ShuttleFlight(gameStatus, city));
 				}
 			}
 		}
-		return null;
+		return shuttleFlightSet;
 	}
 }

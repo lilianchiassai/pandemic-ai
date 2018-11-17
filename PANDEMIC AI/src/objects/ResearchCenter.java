@@ -1,6 +1,8 @@
 package objects;
 
-public class ResearchCenter {
+import java.io.Serializable;
+
+public class ResearchCenter implements Serializable {
 	private City city;
 	
 	public ResearchCenter() {

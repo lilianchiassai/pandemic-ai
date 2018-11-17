@@ -1,5 +1,6 @@
 package objects.card;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 import objects.Desease;
 import util.GameUtil;
 
-public class Deck {
+public class Deck implements Serializable {
 	protected LinkedList<Card> cardDeck;
 	private Deck discardPile;
 	private Class cardClass = null;
@@ -81,9 +82,13 @@ public class Deck {
 	}
 	
 	public Card draw() {
-		Card card = cardDeck.getLast();
-		cardDeck.remove(card);
-		return card;
+		if(cardDeck.size()>0) {
+			Card card = cardDeck.getLast();
+			cardDeck.remove(card);
+			return card;
+		} else {
+			return null;
+		}
 	}
 	
 	public Card drawBottomCard() {

@@ -3,26 +3,23 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jgrapht.graph.DefaultEdge;
-
-import gameStatus.Game;
-import objects.City;
+import game.GameStatus;
 import objects.card.Card;
 
 public class Discard extends GameAction {
 	Card card;
 	objects.Character character;
 	
-	public Discard(Game game, objects.Character character, Card card) {
-		super(game);
+	public Discard( objects.Character character, Card card) {
+		super();
 		this.actionCost=0;
 		this.character=character;
 		this.card=card;
 	}
 	
 	@Override
-	public boolean perform() {
-		if(isValid() && super.perform()) {
+	public boolean perform(GameStatus gameStatus) {
+		if(isValid() && super.perform(gameStatus)) {
 			return character.getHand().discard(card);
 		}
 		return false;
@@ -32,11 +29,11 @@ public class Discard extends GameAction {
 		return character.getHand().getCardDeck().contains(card);
 	}
 
-	public static Set<GameAction> getValidGameActionSet(Game game, objects.Character character) {
+	public static Set<GameAction> getValidGameActionSet(GameStatus gameStatus, objects.Character character) {
 		Set<GameAction> discardSet = new HashSet<GameAction>();
 		if(character.getHand().getCardDeck().size() > 7) {
 			for(Card card : character.getHand().getCardDeck()) {
-				discardSet.add(new Discard(game,character,card));
+				discardSet.add(new Discard(character,card));
 			}
 		}
 		return discardSet;

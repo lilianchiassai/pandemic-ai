@@ -1,5 +1,9 @@
 package util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -8,7 +12,8 @@ import java.util.stream.Collectors;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 
-import gameStatus.Game;
+import game.Game;
+import game.GameProperties;
 import objects.Character;
 import objects.City;
 import objects.Cube;
@@ -64,8 +69,8 @@ public class GameUtil {
 		return (card) -> (card instanceof Card && ((Card)card).getTitle().equals(title));
 	}
 	
-	public static City getCity(Game game, String cityName) {
-		Set<City> citySet = (Set<City>) game.getGameStatus().getMap().vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
+	public static City getCity(String cityName) {
+		Set<City> citySet = (Set<City>) GameProperties.map.vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
 		if(citySet != null) {
 			Iterator<City> it = citySet.iterator();
 			if(it.hasNext()) {
@@ -75,8 +80,8 @@ public class GameUtil {
 		return null;
 	}
 
-	public static Character getPlayer(Game game, String playerName) {
-		Set<Character> playerSet =  (Set<Character>) game.getGameStatus().getCharacterList().stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
+	public static Character getPlayer(String playerName) {
+		Set<Character> playerSet =  (Set<Character>) GameProperties.characterReserve.getCharacterList().stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
 		if(playerSet != null) {
 			Iterator<Character> it = playerSet.iterator();
 			if(it.hasNext()) {
@@ -86,8 +91,8 @@ public class GameUtil {
 		return null;
 	}
 
-	public static Desease getDesease(Game game, String deseaseName) {
-		Set<Desease> deseaseSubSet = (Set<Desease>) game.getGameStatus().getDeseaseSet().stream().filter(GameUtil.getDeseaseNamePredicate(deseaseName)).collect(Collectors.toSet());
+	public static Desease getDesease(String deseaseName) {
+		Set<Desease> deseaseSubSet = (Set<Desease>) GameProperties.deseaseSet.stream().filter(GameUtil.getDeseaseNamePredicate(deseaseName)).collect(Collectors.toSet());
 		if(deseaseSubSet != null) {
 			Iterator<Desease> it = deseaseSubSet.iterator();
 			if(it.hasNext()) {
@@ -96,5 +101,25 @@ public class GameUtil {
 		}
 		return null;
 	}
+	
+	public static <T> T deepCopy(T object) throws Exception
+    {
+        //Serialization of object
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        out.writeObject(object);
+ 
+        //De-serialization of object
+        ByteArrayInputStream bis = new   ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bis);
+        T copied = (T) in.readObject();
+ 
+        //Verify that object is not corrupt
+ 
+        //validateNameParts(fName);
+        //validateNameParts(lName);
+ 
+        return copied;
+    }
 	
 }

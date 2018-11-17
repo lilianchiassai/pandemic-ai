@@ -3,43 +3,33 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import gameStatus.Game;
-import objects.City;
+import game.GameStatus;
 import objects.ResearchCenter;
 import objects.card.Card;
 import objects.card.CityCard;
 
 public class Build extends GameAction {
-	Game game;
 	
-	public Build(Game game) {
-		super(game);
+	public Build() {
+		super();
 	}
 
-	public boolean perform() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition());
-		if(cityCard != null && !game.getCurrentPlayer().getPosition().hasResearchCenter()) {
-			game.getCurrentPlayer().getHand().discard(cityCard);
-			ResearchCenter researchCenter = game.getReserve().getResearchCenter();
-			if(researchCenter != null && super.perform()) {
-				researchCenter.build(game.getCurrentPlayer().getPosition());
-				return true;
+	public boolean perform(GameStatus gameStatus) {
+		CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
+		if(cityCard != null ) {
+			if(super.canPerform(gameStatus)) {
+				return gameStatus.addResearchCenter(gameStatus.getCurrentPlayer().getPosition()) && super.perform(gameStatus);
 			}
 		}
 		return false;
 	}
 
-	public boolean isValid() {
-		return game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition()) != null && !game.getCurrentPlayer().getPosition().hasResearchCenter();
-	}
-
-	public static Set<Build> getValidGameActionSet(Game game) {
+	public static Set<Build> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Build> buildFlightSet = new HashSet<Build>();
-		for(Card cityCard : game.getCurrentPlayer().getHand().getCityCardSet()) {
-			if(!game.getCurrentPlayer().getPosition().hasResearchCenter()) {
-				buildFlightSet.add(new Build(game));
-			}
-			
+		for(Card cityCard : gameStatus.getCurrentPlayer().getHand().getCityCardSet()) {
+			if(!gameStatus.getCurrentPlayer().getPosition().hasResearchCenter()) {
+				buildFlightSet.add(new Build());
+			}		
 		}
 		return buildFlightSet;
 	}

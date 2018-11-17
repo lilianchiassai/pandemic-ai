@@ -1,5 +1,6 @@
 package objects;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -7,7 +8,7 @@ import java.util.stream.Collectors;
 
 import util.GameUtil;
 
-public class Reserve {
+public class Reserve implements Serializable {
 	private Set<Cube> cubeSet;
 	private Set<ResearchCenter> researchCenterSet;
 	

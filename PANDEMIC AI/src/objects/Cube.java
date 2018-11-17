@@ -1,6 +1,8 @@
 package objects;
 
-public class Cube {
+import java.io.Serializable;
+
+public class Cube implements Serializable {
 	private Desease desease;
 	private City city;
 	

@@ -5,7 +5,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import gameStatus.Game;
+import game.Game;
+import game.GameStatus;
 import objects.City;
 import util.GameUtil;
 
@@ -34,13 +35,13 @@ public class Hand extends Deck {
 	}
 
 	
-	public void discard(Game game, PlayerCard card) {
-		game.getPlayerDeck().getDiscardPile().addOnTop(card);
+	public void discard(GameStatus gameStatus, PlayerCard card) {
+		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(card);
 		this.cardDeck.remove(card);
 	}
 	
-	public void discard(Game game, Set<Card> cardSetDesease) {
-		game.getPlayerDeck().getDiscardPile().addOnTop(cardSetDesease);
+	public void discard(GameStatus gameStatus, Set<Card> cardSetDesease) {
+		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(cardSetDesease);
 		this.cardDeck.removeAll(cardSetDesease);
 	}
 	

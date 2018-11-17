@@ -2,38 +2,59 @@ package ai.mcts;
 
 import java.util.Collections;
 
-import gameStatus.Game;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import game.Game;
+import game.GameStatus;
 
 public class MonteCarloTreeSearch {
+	
+	private static Logger logger = LogManager.getLogger(MonteCarloTreeSearch.class.getName());
+	
 	MCTSNode<Game> root;
 	int timeLimit;
-	int iterationTime;
-	MCTSNode rolloutRootNode;
+	long iterationTime;
 	
-	public MonteCarloTreeSearch(Game gameState, int timeLimit) {
-		this.root = new MCTSNode(gameState);
+	
+	public MonteCarloTreeSearch(GameStatus game, int timeLimit) {
+		this.root = new MCTSNode(game.clone());
 		this.timeLimit = timeLimit;
 	}
 	
-	public MCTSNode run(MCTSNode currentRoot) {
-		while(resourceAvailable()) {
-			MCTSNode leaf = traverse(currentRoot);
-			MCTSNode terminalNode = rollout(leaf);
-			backpropagate(leaf, terminalNode);
+	public MCTSNode run() {
+		logger.info("New run");
+		
+		if(root.isTerminal()) {
+			return root;
+		} else {
+			iterationTime = System.currentTimeMillis();
+			while(resourceAvailable()) {
+				MCTSNode leaf = traverse(root);
+				
+				MCTSNode terminalNode = rollout(leaf);
+				backpropagate(leaf, terminalNode);
+				logger.info("New iteration");
+			}
+			root = bestChild(root);
+			return root;
 		}
-		return bestChild(currentRoot);
 	}
 	
 	public MCTSNode traverse(MCTSNode node) {
 		if(node.isFullyExpanded()) {
 			return bestUCTChild(node);
 		} else {
-			return bestUnvisitedChild(node);
+			if(!node.isTerminal()) {
+				return bestUnvisitedChild(node);
+			} else {
+				return null;
+			}
 		}
 	}
 	
 	public MCTSNode rollout(MCTSNode rolloutRootNode) {
-		MCTSNode node = (MCTSNode) rolloutRootNode.clone();
+		MCTSNode node = rolloutRootNode.clone();
 		while(!node.isTerminal()) {
 			node = rolloutPolicy(node);
 		}
@@ -48,28 +69,27 @@ public class MonteCarloTreeSearch {
 		if(leaf.isRoot()) {
 			return;
 		}
-		((MCTSNode<Game>) leaf.getParent()).updateStats(terminalNode);
 		leaf.updateStats(terminalNode);
 	}
 	
 	public MCTSNode bestChild(MCTSNode node) {
-		//Performed through children sorting : the maxed uct child is always the first
+		//TODO sort children list to perform a quicker max ?
 		double max = 0;
 		MCTSNode result = null;
-		for(Object child : node.getChildren()) {
+		for(Object child : node.getVisitedChildren()) {
 			if(max<((MCTSNode)child).getVisitCount()) {
 				max = ((MCTSNode)child).getVisitCount();
 				result =(MCTSNode) child;
 			}
 		}
-		return (MCTSNode) node.getChildren().get(0);
+		return (MCTSNode) result;
 	}
 	
 	public MCTSNode bestUCTChild(MCTSNode node) {
 		//TODO sort children list to perform a quicker max ?
 		double max = 0;
 		MCTSNode result = null;
-		for(Object child : node.getChildren()) {
+		for(Object child : node.getVisitedChildren()) {
 			if(max<((MCTSNode)child).getUct()) {
 				max = ((MCTSNode)child).getUct();
 				result =(MCTSNode) child;
@@ -82,10 +102,11 @@ public class MonteCarloTreeSearch {
 	
 	public MCTSNode bestUnvisitedChild(MCTSNode node) {
 		//TODO pick at random only between unvisited nodes
-		return (MCTSNode) node.getChildren().get(((int) ((Math.random() * 10)/10))*node.getChildren().size());
+		return (MCTSNode) node.getUnvisitedChildren().get(((int) ((Math.random() * 10)/10))*node.getUnvisitedChildren().size());
 	}
 	
 	public boolean resourceAvailable() {
-		return iterationTime + timeLimit < System.currentTimeMillis();
+		System.out.println(iterationTime + timeLimit > System.currentTimeMillis());
+		return iterationTime + timeLimit > System.currentTimeMillis();
 	}
 }

@@ -3,38 +3,34 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import gameStatus.Game;
+import game.GameProperties;
+import game.GameStatus;
 import objects.City;
-import objects.card.Card;
 import objects.card.CityCard;
 
 public class CharterFlight extends MoveAction {
 	
 	
-	public CharterFlight(Game game, City destination) {
-		super(game,destination);
+	public CharterFlight(GameStatus gameStatus, City destination) {
+		super(destination);
 	}
 	
 	@Override
-	public boolean perform() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition());
-		if(cityCard != null && super.perform()) {
-			game.getCurrentPlayer().getHand().discard(cityCard);
-			return game.getCurrentPlayer().move(destination);
+	public boolean perform(GameStatus gameStatus) {
+		CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
+		if(cityCard != null && super.perform(gameStatus)) {
+			gameStatus.getCurrentPlayer().getHand().discard(cityCard);
+			return gameStatus.getCurrentPlayer().setPosition(destination);
 		}
 		return false;
 	}
 	
-	@Override
-	public boolean isValid() {
-		return game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition()) != null;
-	}
 
-	public static Set<MoveAction> getValidGameActionSet(Game game) {
+	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		Set<MoveAction> charterFlightSet = new HashSet<MoveAction>();
-		if(game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition()) != null) {
-			for(City city : game.getMap().vertexSet()) {
-				charterFlightSet.add(new CharterFlight(game, city));
+		if(gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition()) != null) {
+			for(City city : GameProperties.map.vertexSet()) {
+				charterFlightSet.add(new CharterFlight(gameStatus, city));
 			}
 		}
 		return charterFlightSet;

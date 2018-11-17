@@ -1,54 +1,40 @@
 package game.action;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
-import gameStatus.Game;
+import game.GameStatus;
 import objects.Cube;
 import objects.Desease;
-import objects.card.Card;
-import objects.card.CityCard;
 
 public class Treat extends GameAction {
 	Desease desease;
 	
 	
 	
-	public Treat(Game game, Desease desease) {
-		super(game);
+	public Treat(Desease desease) {
+		super();
 		this.desease=desease;
 	}
 
-	public boolean perform() {
-		Set<Cube> cubeSet = game.getCurrentPlayer().getPosition().getCubeSet(desease);
-		if(cubeSet != null && super.perform()) {
+	public boolean perform(GameStatus gameStatus) {
+		Set<Cube> cubeSet = gameStatus.getCurrentPlayer().getPosition().getCubeSet(desease);
+		if(cubeSet != null && super.perform(gameStatus)) {
 			if(desease.isCured()) {
-				game.getCurrentPlayer().getPosition().removeCube(cubeSet);
-				game.getReserve().addCube(cubeSet);
-				return true;
+				return gameStatus.removeAndReserveCubeSet(gameStatus.getCurrentPlayer().getPosition(), desease);
 			} else {
-				Iterator<Cube> it = cubeSet.iterator();
-				if(it.hasNext()) {
-					Cube cube = it.next();
-					game.getCurrentPlayer().getPosition().removeCube(cube);
-					game.getReserve().addCube(cube);
-					return true;
+				if(cubeSet.size()>0) {
+					return gameStatus.removeAndReserveCube(gameStatus.getCurrentPlayer().getPosition(), desease);
 				}
 			}
 		}
 		return false;
 	}
 
-	public boolean isValid() {
-		Set<Cube> cubeSet = game.getCurrentPlayer().getPosition().getCubeSet(desease);
-		return cubeSet != null && cubeSet.size()>0;
-	}
-
-	public static Set<Treat> getValidGameActionSet(Game game) {
+	public static Set<Treat> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Treat> treatSet = new HashSet<Treat>();
-		for(Desease desease : game.getCurrentPlayer().getPosition().getDeseaseSet()) {
-			treatSet.add(new Treat(game, desease));
+		for(Desease desease : gameStatus.getCurrentPlayer().getPosition().getDeseaseSet()) {
+			treatSet.add(new Treat(desease));
 		}
 		return treatSet;
 	}

@@ -1,8 +1,8 @@
-package gameStatus;
+package game;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -11,11 +11,20 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
 
+import game.action.Build;
+import game.action.CharterFlight;
+import game.action.Cure;
+import game.action.DirectFlight;
+import game.action.Drive;
 import game.action.GameAction;
-import gameStatus.GameStatus.GameStep;
+import game.action.ShareKnowledge;
+import game.action.ShuttleFlight;
+import game.action.Treat;
 import objects.Character;
 import objects.City;
+import objects.Cube;
 import objects.Desease;
+import objects.ResearchCenter;
 import objects.Reserve;
 import objects.card.CityCard;
 import objects.card.Deck;
@@ -24,44 +33,29 @@ import objects.card.PlayerCard;
 import objects.card.PropagationCard;
 import util.GameUtil;
 
-public class GameStatus {
+public class GameProperties {
 
-	//Final
-	private static Logger logger = LogManager.getLogger(GameStatus.class.getName());
-	public enum GameStep {
-		play,
-		draw,
-		propagate,
-		win,
-		lose
-	}
+	private static Logger logger = LogManager.getLogger(GameProperties.class.getName());
 	
+	public static Set<Class<? extends GameAction>> actionTypeSet;
+	static int maxEclosionCounter;	
+	public static int actionCount;
+	static int[] propagationSpeed;
+	public static Set<Desease> deseaseSet;
+	public static Graph<City, DefaultEdge> map;
+	static Map<Desease, Set<Cube>> cubeReserve;
+	static Set<ResearchCenter> researchCenterReserve;
+	static Set<PlayerCard> playerCardReserve;
+	static Set<PropagationCard> propagationCardReserve;
+	static Set<EpidemicCard> epidemicCardReserve;
 	
-	
-	//Not final	
-	private int eclosionCounter;
-	private int propagationSpeed;
-	private int epidemicCounter;
-	
-	private List<Character> players;
-	private Graph<City, DefaultEdge> map;	
-	private Reserve reserve;
-	private Set<Desease> deseaseSet;
-	private Deck propagationDeck;
-	private Deck playerDeck;
-	
-	private int numberOfPlayers;
-	private int currentPlayerIndex;
-	
-	private GameStep gameStep;
-	
-	public GameStatus(int numberOfPlayers) {
+	public GameProperties() {
 		logger.info("Instantiating new game.");
 		
-		//Game status
-		eclosionCounter=0;
-		propagationSpeed=2;
-		epidemicCounter=0;
+		// Counters
+		maxEclosionCounter = 7;
+		actionCount = 4;
+		GameProperties.propagationSpeed = new int[]{2, 2, 2, 3, 3, 4, 4};
 		
 		// Instantiate deseases
 		logger.info("Loading deseases.");
@@ -69,17 +63,14 @@ public class GameStatus {
 		Desease red = new Desease("Red");
 		Desease blue = new Desease("Blue");
 		Desease black = new Desease("Black");
-		this.deseaseSet = new HashSet<Desease>();
-		this.deseaseSet.add(yellow);
-		this.deseaseSet.add(blue);
-		this.deseaseSet.add(red);
-		this.deseaseSet.add(black);
+		GameProperties.deseaseSet = new HashSet<Desease>();
+		GameProperties.deseaseSet.add(yellow);
+		GameProperties.deseaseSet.add(blue);
+		GameProperties.deseaseSet.add(red);
+		GameProperties.deseaseSet.add(black);
 		
-		// Instantiate Reserve
-		logger.info("Building reserve.");
-		this.reserve = new Reserve(this.deseaseSet);
+		GameProperties.map = new DirectedMultigraph<>(DefaultEdge.class);
 		
-		// Instantiate Cities
 		logger.info("Creating city network.");
 		City sanFrancisco = new City("San Francisco", blue, 21000);
 		City chicago = new City("Chicago", blue, 21000);
@@ -133,10 +124,7 @@ public class GameStatus {
 		City manila = new City("Manila", red, 21000);
 		City sydney = new City("Sydney", red, 21000);
 		
-		
-		
 		// Create map
-		map = new DirectedMultigraph<>(DefaultEdge.class);
 		map.addVertex(sanFrancisco);
 		map.addVertex(chicago);
 		map.addVertex(atlanta);
@@ -284,93 +272,55 @@ public class GameStatus {
 		map.addEdge(seoul, beijing);
 		
 		map = GameUtil.makeBidirectionnal(map);
-		// Create players
-		logger.info(numberOfPlayers+" new players in Atlanta.");
-		this.numberOfPlayers = numberOfPlayers;
-		this.players = new LinkedList<Character>();
-		for(int i=0; i< this.numberOfPlayers; i++) {
-			players.add(new Character(this, atlanta, "Player "+(i+1)));
-		}
-		this.currentPlayerIndex = numberOfPlayers;
 		
-		// Create decks
-		logger.info("Shuffling decks");
-		propagationDeck = new Deck(PropagationCard.class); 
-		playerDeck = new Deck(PlayerCard.class); 
-		for(City city : map.vertexSet()) {
+		// Instantiate Reserve
+		logger.info("Building reserve.");
+		for(Desease desease : deseaseSet) {
+			HashSet<Cube> cubeSet = new HashSet<Cube>();
+			for(int i = 0; i<24 ; i++) {
+				cubeSet.add(new Cube(desease));
+			}
+			cubeReserve.put(desease,cubeSet);
+		}
+		for(int i = 0; i<6 ; i++) {
+			researchCenterReserve.add(new ResearchCenter());
+		}
+		
+		//Create Cards
+		logger.info("Creating Cards");
+		for(City city : GameProperties.map.vertexSet()) {
 			//Create propagation card
-			PropagationCard propagationCard = new PropagationCard(city);
-			propagationDeck.addOnTop(propagationCard);
-			CityCard cityCard = new CityCard(city);
-			playerDeck.addOnTop(cityCard);
+			propagationCardReserve.add(new PropagationCard(city));
+			playerCardReserve.add(new CityCard(city));
+			
 		}
-		propagationDeck.shuffle();
+		for(int i = 0; i<10; i++) {
+			epidemicCardReserve.add(new EpidemicCard());
+		}
+		
+		
+		for(City city : GameProperties.map.vertexSet()) {
+			//Create propagation card
+			propagationCardReserve.add(new PropagationCard(city));
+			playerCardReserve.add(new CityCard(city));
+			
+		}
+		
+		//Instantiate action rules
+		actionTypeSet = new HashSet<Class<? extends GameAction>>();
+		actionTypeSet.add(Drive.class);
+		actionTypeSet.add(CharterFlight.class);
+		actionTypeSet.add(DirectFlight.class);
+		actionTypeSet.add(ShuttleFlight.class);
+		actionTypeSet.add(Treat.class);
+		actionTypeSet.add(Cure.class);
+		actionTypeSet.add(Build.class);
+		actionTypeSet.add(ShareKnowledge.class);
 		
 	}
 	
-	//Getters
-	public Set<Desease> getDeseaseSet() {
-		return this.deseaseSet;
+	public static int getPropagationSpeed(int epidemicCounter) {
+		return propagationSpeed[epidemicCounter];
 	}
 	
-	public List<Character> getCharacterList() {
-		return this.players;
-	}
-	
-	public Reserve getReserve() {
-		return this.reserve;
-	}
-
-	public Graph<City, DefaultEdge> getMap() {
-		return this.map;
-	}
-
-	public Deck getPlayerDeck() {
-		return this.playerDeck;
-	}
-	
-	public Deck getPropagationDeck() {
-		return this.propagationDeck;
-	}
-	
-	public int getEclosionCounter() {
-		return eclosionCounter;
-	}
-	
-	public int getEpidemicCounter() {
-		return epidemicCounter;
-	}
-	
-	public int getPropagationSpeed() {
-		return propagationSpeed;
-	}
-	
-	public GameStep getGameStep() {
-		return this.gameStep;
-	}
-	
-	public Character getCurrentPlayer() {
-		return players.get(currentPlayerIndex);
-	}
-
-	//Setters
-	public void increaseCurrentPlayerIndex() {
-		currentPlayerIndex = (currentPlayerIndex + 1) % numberOfPlayers;
-	}
-	
-	public void increaseEclosionCounter() {
-		eclosionCounter++;
-	}
-	
-	public void increaseEpidemicCounter() {
-		epidemicCounter++;
-	}
-	
-	public void increasePropagationSpeed() {
-		propagationSpeed++;
-	}
-
-	public void setGameStep(GameStep gameStep) {
-		this.gameStep = gameStep;
-	}
 }

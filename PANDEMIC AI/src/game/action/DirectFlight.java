@@ -3,40 +3,32 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import gameStatus.Game;
+import game.GameStatus;
 import objects.City;
 import objects.card.Card;
 import objects.card.CityCard;
 
 public class DirectFlight extends MoveAction {
 	
-	public DirectFlight(Game game, City destination) {
-		super(game,destination);
+	public DirectFlight(GameStatus gameStatus, City destination) {
+		super(destination);
 	}
 	
 	@Override
-	public boolean perform() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(destination);
-		if(cityCard != null && super.perform()) {
-			game.getCurrentPlayer().getHand().discard(cityCard);
-			return game.getCurrentPlayer().move(destination);
+	public boolean perform(GameStatus gameStatus) {
+		CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(destination);
+		if(cityCard != null && super.perform(gameStatus)) {
+			gameStatus.getCurrentPlayer().getHand().discard(cityCard);
+			return gameStatus.getCurrentPlayer().setPosition(destination);
 		}
 		return false;
 	}
 
-	@Override
-	public boolean isValid() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(destination);
-		if(cityCard != null) {
-			return true;
-		}
-		return false;
-	}
 
-	public static Set<MoveAction> getValidGameActionSet(Game game) {
+	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		Set<MoveAction> directFlightSet = new HashSet<MoveAction>();
-		for(Card cityCard : game.getCurrentPlayer().getHand().getCityCardSet()) {
-			directFlightSet.add(new DirectFlight(game, ((CityCard)cityCard).getCity()));
+		for(Card cityCard : gameStatus.getCurrentPlayer().getHand().getCityCardSet()) {
+			directFlightSet.add(new DirectFlight(gameStatus, ((CityCard)cityCard).getCity()));
 		}
 		return directFlightSet;
 	}

@@ -3,56 +3,43 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import gameStatus.Game;
+import game.GameStatus;
 import objects.Character;
 import objects.card.CityCard;
 
 public class ShareKnowledge extends GameAction {
 	Character character;
 	
-	public ShareKnowledge(Game game, Character character) {
-		super(game);
+	public ShareKnowledge(Character character) {
+		super();
 		this.character=character;
 	}
 
-	public boolean perform() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition());
-		if(cityCard != null && game.getCurrentPlayer().getPosition() == character.getPosition()) {
-			if(super.perform()) {
-				return game.getCurrentPlayer().giveCard(character, cityCard);
+	public boolean perform(GameStatus gameStatus) {
+		CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
+		if(cityCard != null && gameStatus.getCurrentPlayer().getPosition() == character.getPosition()) {
+			if(super.perform(gameStatus)) {
+				return gameStatus.getCurrentPlayer().giveCard(character, cityCard);
 			}
 		} else {
-			cityCard = character.getHand().getCityCard(game.getCurrentPlayer().getPosition());
-			if(cityCard != null && super.perform()) {
-				return game.getCurrentPlayer().takeCard(character, cityCard);
+			cityCard = character.getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
+			if(cityCard != null && super.perform(gameStatus)) {
+				return gameStatus.getCurrentPlayer().takeCard(character, cityCard);
 			}
 		}
 		return false;
 	}
 
-	public boolean isValid() {
-		CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition());
-		if(cityCard != null && game.getCurrentPlayer().getPosition() == character.getPosition()) {
-			return true;
-		} else {
-			cityCard = character.getHand().getCityCard(game.getCurrentPlayer().getPosition());
-			if(cityCard != null) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static Set<ShareKnowledge> getValidGameActionSet(Game game) {
+	public static Set<ShareKnowledge> getValidGameActionSet(GameStatus gameStatus) {
 		Set<ShareKnowledge> shareKnowledgeSet = new HashSet<ShareKnowledge>();
-		for(Character character : game.getCharacterList()) {
-			if(character.getPosition() == game.getCurrentPlayer().getPosition()) {
-				CityCard cityCard = game.getCurrentPlayer().getHand().getCityCard(game.getCurrentPlayer().getPosition());
+		for(Character character : gameStatus.getCharacterList()) {
+			if(character.getPosition() == gameStatus.getCurrentPlayer().getPosition()) {
+				CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
 				if(cityCard == null) {
 					cityCard = character.getHand().getCityCard(character.getPosition());
 				}
 				if(cityCard != null) {
-					shareKnowledgeSet.add(new ShareKnowledge(game, character));
+					shareKnowledgeSet.add(new ShareKnowledge(character));
 				}
 			}
 		}

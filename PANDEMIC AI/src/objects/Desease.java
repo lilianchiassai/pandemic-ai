@@ -1,6 +1,8 @@
 package objects;
 
-public class Desease {
+import java.io.Serializable;
+
+public class Desease implements Serializable {
 	private boolean eradicated;
 	private boolean cured;
 	private String name;

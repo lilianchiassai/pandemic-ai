@@ -1,5 +1,7 @@
 package objects.card;
 
-public abstract class PlayerCard implements Card{
+import java.io.Serializable;
+
+public abstract class PlayerCard implements Card, Serializable{
 	
 }

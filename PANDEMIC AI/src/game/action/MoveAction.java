@@ -3,16 +3,14 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jgrapht.graph.DefaultEdge;
-
-import gameStatus.Game;
+import game.GameStatus;
 import objects.City;
 
 public abstract class MoveAction extends GameAction {
 City destination;
 	
-	public MoveAction(Game game, City destination) {
-		super(game);
+	public MoveAction(City destination) {
+		super();
 		this.destination=destination;
 	}
 
@@ -20,7 +18,7 @@ City destination;
 		return false;
 	}
 
-	public static Set<MoveAction> getValidGameActionSet(Game game) {
+	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		return new HashSet<MoveAction>();
 	}
 }

@@ -1,22 +1,27 @@
 package game.action;
 
-import java.util.Set;
+import java.io.Serializable;
 
-import gameStatus.Game;
+import game.GameStatus;
 
-public abstract class GameAction {
+public abstract class GameAction implements Serializable {
 	
-	public Game game;
 	public int actionCost;
 	
-	public GameAction(Game game) {
-		this.game=game;
+	public GameAction() {
 		this.actionCost = 1;
 	}
 	
-	public boolean perform() {
-		if(game.getCurrentPlayer().getCurrentActionCount() - this.actionCost >=0 ) {
-			game.getCurrentPlayer().setCurrentActionCount(game.getCurrentPlayer().getCurrentActionCount() - this.actionCost);
+	public boolean perform(GameStatus gameStatus) {
+		if(gameStatus.getCurrentPlayer().getCurrentActionCount() - this.actionCost >=0 ) {
+			gameStatus.getCurrentPlayer().setCurrentActionCount(gameStatus.getCurrentPlayer().getCurrentActionCount() - this.actionCost);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean canPerform(GameStatus gameStatus) {
+		if(gameStatus.getCurrentPlayer().getCurrentActionCount() - this.actionCost >=0 ) {
 			return true;
 		}
 		return false;

@@ -1,5 +1,6 @@
 package objects;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -7,7 +8,7 @@ import java.util.stream.Stream;
 
 import util.GameUtil;
 
-public class City {
+public class City implements Serializable{
 	private String name;
 	private int population;
 	private Desease desease;
