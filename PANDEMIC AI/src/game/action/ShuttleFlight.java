@@ -6,17 +6,19 @@ import java.util.Set;
 import game.GameProperties;
 import game.GameStatus;
 import objects.City;
+import util.GameUtil;
 
 public class ShuttleFlight extends MoveAction {
 	
-	public ShuttleFlight(GameStatus gameStatus, City destination) {
+	public ShuttleFlight(City destination) {
 		super(destination);
 	}
 	
 	@Override
 	public boolean perform(GameStatus gameStatus) {
-		if(gameStatus.getCurrentPlayer().getPosition().hasResearchCenter() && destination.hasResearchCenter() && super.perform(gameStatus)) {
-			return gameStatus.getCurrentPlayer().setPosition(destination);
+		if(gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition()) && gameStatus.hasResearchCenter(destination) && super.perform(gameStatus)) {
+			GameUtil.log(gameStatus, GameAction.logger, gameStatus.getCurrentPlayer().getName()+" flies in a shuttle from "+gameStatus.getCurrentCharacterPosition().getName()+" to "+ destination.getName());
+			return gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), destination);
 		}
 		return false;
 	}
@@ -24,10 +26,10 @@ public class ShuttleFlight extends MoveAction {
 
 	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		Set<MoveAction> shuttleFlightSet = new HashSet<MoveAction>();
-		if(gameStatus.getCurrentPlayer().getPosition().hasResearchCenter()) {
-			for(City city : GameProperties.map.vertexSet()) {
-				if(city != gameStatus.getCurrentPlayer().getPosition() && city.hasResearchCenter()) {
-					shuttleFlightSet.add(new ShuttleFlight(gameStatus, city));
+		if(gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition())) {
+			for(City city : GameProperties.map) {
+				if(city != gameStatus.getCurrentCharacterPosition() && gameStatus.hasResearchCenter(city)) {
+					shuttleFlightSet.add(city.getShuttleFlightAction());
 				}
 			}
 		}

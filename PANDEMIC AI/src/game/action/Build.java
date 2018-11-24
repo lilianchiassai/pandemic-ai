@@ -1,12 +1,15 @@
 package game.action;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
+import game.GameProperties;
 import game.GameStatus;
 import objects.ResearchCenter;
 import objects.card.Card;
 import objects.card.CityCard;
+import util.GameUtil;
 
 public class Build extends GameAction {
 	
@@ -15,10 +18,23 @@ public class Build extends GameAction {
 	}
 
 	public boolean perform(GameStatus gameStatus) {
-		CityCard cityCard = gameStatus.getCurrentPlayer().getHand().getCityCard(gameStatus.getCurrentPlayer().getPosition());
+		CityCard cityCard = gameStatus.getCurrentHand().getCityCard(gameStatus.getCurrentCharacterPosition());
 		if(cityCard != null ) {
-			if(super.canPerform(gameStatus)) {
-				return gameStatus.addResearchCenter(gameStatus.getCurrentPlayer().getPosition()) && super.perform(gameStatus);
+			if(canPerform(gameStatus)) {
+				if(gameStatus.addResearchCenter(gameStatus.getCurrentCharacterPosition())) {
+					GameUtil.log(gameStatus, GameAction.logger, gameStatus.getCurrentPlayer().getName()+" builds a new Research Center in "+gameStatus.getCurrentCharacterPosition().getName()+".");
+					gameStatus.getCurrentHand().removeAndDiscard(cityCard);
+					return super.perform(gameStatus);
+				}
+			}
+		}
+		return false;
+	}
+	
+	public boolean canPerform(GameStatus gameStatus) {
+		if(gameStatus.getCurrentActionCount() >= this.actionCost) {
+			if(!gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition()) && gameStatus.getResearchCenterCurrentReserve().size()>0) {
+				return true;
 			}
 		}
 		return false;
@@ -26,11 +42,10 @@ public class Build extends GameAction {
 
 	public static Set<Build> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Build> buildFlightSet = new HashSet<Build>();
-		for(Card cityCard : gameStatus.getCurrentPlayer().getHand().getCityCardSet()) {
-			if(!gameStatus.getCurrentPlayer().getPosition().hasResearchCenter()) {
-				buildFlightSet.add(new Build());
-			}		
-		}
+		CityCard cityCard = gameStatus.getCurrentHand().getCityCard(gameStatus.getCurrentCharacterPosition());
+		if(cityCard != null && !gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition())) {
+			buildFlightSet.add(GameProperties.buildAction);
+		}	
 		return buildFlightSet;
 	}
 }

@@ -12,35 +12,39 @@ public class GameEngine extends Observable{
 	private static Logger logger = LogManager.getLogger(GameEngine.class.getName());
 	
 	GameStatus gameStatus;
-	GameProperties gameProperties;
+	static GameProperties gameProperties;
 	
 	
 	
-	public GameEngine(GameProperties gameProperties, GameStatus gameStatus, boolean humanPlayer) {
-		this.gameProperties=gameProperties;
+	public GameEngine(GameStatus gameStatus, Player player) {
 		this.gameStatus=gameStatus;
-		if(humanPlayer) {
-			this.addObserver(new HumanPlayer(this.gameStatus));
-		} else {
-			this.addObserver(new AIPlayer(this.gameStatus,400,100));
-		}
+		this.addObserver(player);
 	}
 
 	public static void main(String[] args) {
 		//Starting game
-		GameEngine gameEngine = new GameEngine(new GameProperties(), new GameStatus(4,5, GameUtil.getCity("Atlanta")), false);
+		gameProperties = new GameProperties();
+		GameStatus gameStatus = new GameStatus(2,4, GameUtil.getCity("Atlanta"));
+		GameEngine gameEngine = new GameEngine(gameStatus, new AIPlayer(gameStatus,1000,200));
 		gameEngine.run();
+		if(gameStatus.isWin()) {
+			logger.info("GG");
+		} else {
+			logger.info("You lose");
+		}
+		System.out.println("Number of plays : "+GameProperties.visitCount);
+		System.out.println("Number of victory : "+GameProperties.victoryCount);
 	}
 	
-	public void run() {
+	public GameStatus run() {
 		while(!gameStatus.isOver()) {
 			if(gameStatus.getGameStep() == GameRules.GameStep.turnStart) {
 				logger.info("Turn "+gameStatus.getTurnCounter());
 			}
-			GameRules.updateStatus(gameStatus);
+			GameRules.updateStatus(this.gameStatus);
 			GameRules.playStatus(this);
 		}
-		return;
+		return gameStatus;
 	}
 	
 	public void notifyGameStep(GameStep gameStep) {

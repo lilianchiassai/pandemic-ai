@@ -1,21 +1,30 @@
 package objects.card;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import game.Game;
 import game.GameStatus;
+import objects.Character;
 import objects.City;
 import util.GameUtil;
 
 public class Hand extends Deck {
 	
-	public Hand() {
+	objects.Character character;
+	
+	public Hand(Character character) {
 		super(PlayerCard.class);
+		this.character = character;
 	}
 	
+	public Character getCharacter() {
+		return this.character;
+	}
+
 	public Set<Card> getCityCardSet() {
 		return  ((Stream<Card>)cardDeck.stream().filter(GameUtil.getCityCardPredicate())).collect(Collectors.toSet());
 	}
@@ -33,16 +42,15 @@ public class Hand extends Deck {
 	public void removeCard(CityCard card) {
 		cardDeck.remove(card);
 	}
-
 	
-	public void discard(GameStatus gameStatus, PlayerCard card) {
+	public void removeAnddiscard(GameStatus gameStatus, PlayerCard card) {
 		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(card);
 		this.cardDeck.remove(card);
 	}
 	
-	public void discard(GameStatus gameStatus, Set<Card> cardSetDesease) {
-		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(cardSetDesease);
+	public void removeAndDiscard(GameStatus gameStatus, Set<Card> cardSetDesease) {
 		this.cardDeck.removeAll(cardSetDesease);
+		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(cardSetDesease);
 	}
 	
 	public String toString() {
@@ -56,4 +64,13 @@ public class Hand extends Deck {
 		return result != null & result.length()>2 ? result.substring(2) : "";
 	}
 	
+	public Hand clone() {
+		Hand clone = new Hand(this.character);
+		clone.cardDeck = new LinkedList<Card>();
+		clone.cardDeck.addAll(this.cardDeck);
+		Collections.shuffle(clone.cardDeck);
+		
+		clone.discardPile = this.discardPile != null ? this.discardPile.clone() : null;
+		return clone;
+	}
 }

@@ -1,6 +1,8 @@
 package game;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import game.GameRules.GameStep;
+import game.action.GameAction;
 import objects.Character;
 import objects.City;
 import objects.Cube;
@@ -20,37 +23,67 @@ import objects.Desease;
 import objects.ResearchCenter;
 import objects.card.Card;
 import objects.card.Deck;
-import objects.card.EpidemicCard;
+import objects.card.Hand;
 import objects.card.PlayerCard;
+import objects.card.PlayerDeck;
 import objects.card.PropagationCard;
+import objects.card.PropagationDeck;
 
 public class GameStatus implements Serializable {
 
 	//Final
 	private static Logger logger = LogManager.getLogger(GameStatus.class.getName());
 	
-	private Deck propagationDeck;
-	private Deck playerDeck;
+	private PropagationDeck propagationDeck;
+	private PlayerDeck playerDeck;
 	
 	private int turnCounter;
 	private int eclosionCounter;
-	private int epidemicCounter;
-	private Character currentPlayer;
+	private Hand currentHand;
+	private int currentActionCount;
 	private GameRules.GameStep gameStep;
 	
-	private LinkedList<Character> characterList;
-	
-	private Map<City, Set<Cube>> cityCubeMap;
+	private LinkedList<Hand> characterHandList;
+	public Map<Character, Hand> characterHandMap;
+	private Map<Character, City> characterPositionMap;
+	private Map<City, Map<Desease, Set<Cube>>> cityCubeMap;
 	private Map<City, ResearchCenter> cityResearchCenterMap;
 	private Set<ResearchCenter> researchCenterCurrentReserve;
 	private Map<Desease, Set<Cube>> cubeCurrentReserve;
+	private Set<Desease> curedDeseaseSet;
+	private Set<Desease> eradicatedDeseaseSet;
+
+	private boolean simulation;
+	
+	//Rules material
+	private Set<City> alreadyEcloded;
+	private City eclosionStart;
+	public LinkedList<GameAction> actionList;
+	public LinkedList<GameAction> previousActionList;
+	public int value;
+	
+	public GameStatus() {
+		
+	}
 	
 	public GameStatus(int numberOfPlayers, int difficulty, City start) {
+		//MCTS material
+		simulation = false;
+		this.actionList = new LinkedList<GameAction>();
+		this.previousActionList = new LinkedList<GameAction>();
+		this.value=0;
+		//Rules material
+		this.alreadyEcloded = new HashSet<City>();
+		
 		
 		//Building reserves and positioning maps
-		cityCubeMap = new HashMap<City, Set<Cube>>();
-		for(City city : GameProperties.map.vertexSet()) {
-			cityCubeMap.put(city, new HashSet<Cube>());
+		cityCubeMap = new HashMap<City, Map<Desease, Set<Cube>>>();
+		for(City city : GameProperties.map) {
+			HashMap<Desease, Set<Cube>> deseaseCubeMap = new HashMap<Desease, Set<Cube>>();
+			for(Desease desease : GameProperties.deseaseSet) {
+				deseaseCubeMap.put(desease, new HashSet<Cube>());
+			}
+			cityCubeMap.put(city, deseaseCubeMap);
 		}
 		cityResearchCenterMap = new HashMap<City, ResearchCenter>();
 		
@@ -66,18 +99,26 @@ public class GameStatus implements Serializable {
 			}
 			cubeCurrentReserve.put(desease, cubeSet);
 		}
+		curedDeseaseSet = new HashSet<Desease>();
+		eradicatedDeseaseSet = new HashSet<Desease>();
 		
-		//Create characters
-		for(int i = 0; i<numberOfPlayers; i++) {
-			characterList.add(new Character(start, "Player "+(i+1)));
+		// Create players
+		characterHandMap = new HashMap<Character, Hand>();
+		characterPositionMap = new HashMap<Character, City>();
+		characterHandList = new LinkedList<Hand>();
+		for (int i = 0; i<numberOfPlayers; i++) {
+			characterPositionMap.put(GameProperties.characterReserve.get(i), start);
+			Hand hand = new Hand(GameProperties.characterReserve.get(i));
+			characterHandList.add(hand);
+			characterHandMap.put(GameProperties.characterReserve.get(i), hand);
 		}
 		
 		//Game status
 		turnCounter = 1;
 		eclosionCounter=0;
-		epidemicCounter=0;
 		gameStep = GameRules.GameStep.play;
-		currentPlayer = characterList.getFirst();
+		currentHand = characterHandList.getFirst();
+		currentActionCount =4;
 		
 		// Add research center on atlanta
 		logger.info("Building a new Research Center in Atlanta.");
@@ -85,21 +126,21 @@ public class GameStatus implements Serializable {
 		
 		// Create decks
 		logger.info("Shuffling decks");
-		propagationDeck = new Deck(PropagationCard.class); 	
+		propagationDeck = new PropagationDeck(); 	
 		for(Card card : GameProperties.propagationCardReserve) {
 			propagationDeck.addOnTop(card);
 		}
 		propagationDeck.shuffle();
-		playerDeck = new Deck(PlayerCard.class); 
+		playerDeck = new PlayerDeck(); 
 		for(Card card : GameProperties.playerCardReserve) {
 			playerDeck.addOnTop(card);
 		}
 		
 		logger.info("Dealing cards to each player.");
 		playerDeck.shuffle();
-		for(Character player : characterList) {
+		for(Hand hand : characterHandList) {
 			for(int i = 0; i<6-numberOfPlayers; i++) {
-				player.hand((PlayerCard) playerDeck.draw());
+				hand.addOnTop((PlayerCard) playerDeck.draw());
 			}
 		}
 		
@@ -107,7 +148,7 @@ public class GameStatus implements Serializable {
 		logger.info("Splitting player deck to add Epidemics.");
 		List<Deck> deckList = playerDeck.split(difficulty);
 		for(Deck subdeck : deckList) {
-			subdeck.addOnTop(new EpidemicCard());
+			subdeck.addOnTop(GameProperties.epidemicCardReserve);
 			subdeck.shuffle();
 			playerDeck.addOnTop(subdeck);
 		}
@@ -125,15 +166,15 @@ public class GameStatus implements Serializable {
 	
 	//Getters
 	
-	public List<Character> getCharacterList() {
+	/*public List<Character> getCharacterList() {
 		return this.characterList;
-	}
+	}*/
 
-	public Deck getPlayerDeck() {
+	public PlayerDeck getPlayerDeck() {
 		return this.playerDeck;
 	}
 	
-	public Deck getPropagationDeck() {
+	public PropagationDeck getPropagationDeck() {
 		return this.propagationDeck;
 	}
 	
@@ -141,12 +182,8 @@ public class GameStatus implements Serializable {
 		return eclosionCounter;
 	}
 	
-	public int getEpidemicCounter() {
-		return epidemicCounter;
-	}
-	
 	public int getPropagationSpeed() {
-		return GameProperties.getPropagationSpeed(epidemicCounter);
+		return GameProperties.getPropagationSpeed(this.playerDeck.getEpidemicCounter());
 	}
 	
 	public GameRules.GameStep getGameStep() {
@@ -154,9 +191,16 @@ public class GameStatus implements Serializable {
 	}
 	
 	public Character getCurrentPlayer() {
-		return this.currentPlayer;
+		return this.currentHand.getCharacter();
 	}
 	
+	public Hand getCurrentHand() {
+		return this.currentHand;
+	}
+	
+	public City getCurrentCharacterPosition() {
+		return this.characterPositionMap.get(currentHand.getCharacter());
+	}
 
 	public Set<ResearchCenter> getResearchCenterReserve() {
 		return this.researchCenterCurrentReserve;
@@ -165,10 +209,29 @@ public class GameStatus implements Serializable {
 	public Map<City, ResearchCenter> getCityResearchCenterMap() {
 		return this.cityResearchCenterMap;
 	}
+	
+	public Hand getPlayerHand(Character character) {
+		return this.characterHandMap.get(character);
+	}
+	
+	public boolean isOver() {
+		if(gameStep == GameStep.lose || isWin()) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isWin() {
+		if(gameStep == GameStep.win) {
+			return true;
+		}
+		return false;
+	}
 
 	//Setters
 	public void nextPlayer() {
-		currentPlayer = characterList.get((characterList.indexOf(currentPlayer)+1) % characterList.size());
+		currentHand = characterHandList.get((characterHandList.indexOf(currentHand)+1) % characterHandList.size());
+		currentActionCount = GameProperties.actionCount;
 	}
 	
 	public void increaseEclosionCounter() {
@@ -176,7 +239,7 @@ public class GameStatus implements Serializable {
 	}
 	
 	public void increaseEpidemicCounter() {
-		epidemicCounter++;
+		this.playerDeck.increaseEpidemicCounter();
 	}
 
 	public void setGameStep(GameRules.GameStep gameStep) {
@@ -189,6 +252,14 @@ public class GameStatus implements Serializable {
 
 	public int getTurnCounter() {
 		return this.turnCounter;
+	}
+	
+	public Map<Character, City> getCharacterPositionMap() {
+		return this.characterPositionMap;
+	}
+	
+	public City getCharacterPosition(Character character) {
+		return this.characterPositionMap.get(character);
 	}
 	
 	public void undeterministic() {
@@ -225,7 +296,7 @@ public class GameStatus implements Serializable {
 		if(it.hasNext()) {
 			Cube cube = it.next();
 			removeFromReserve(cube);
-			cityCubeMap.get(city).add(cube);
+			cityCubeMap.get(city).get(desease).add(cube);
 			return true;
 		} else {
 			return false;
@@ -237,8 +308,8 @@ public class GameStatus implements Serializable {
 	}
 	
 	private Set<Cube> removeCubeSet(City city, Desease desease) {
-		Set<Cube> cubeSet = cityCubeMap.get(desease);
-		cityCubeMap.get(desease).removeAll(cubeSet);
+		Set<Cube> cubeSet = cityCubeMap.get(city).get(desease);
+		cityCubeMap.get(city).get(desease).removeAll(cubeSet);
 		return cubeSet;
 	}
 	
@@ -251,8 +322,8 @@ public class GameStatus implements Serializable {
 	}
 	
 	private Cube removeCube(City city, Desease desease) {
-		Cube cube = cityCubeMap.get(desease).iterator().next();
-		cityCubeMap.get(desease).remove(cube);
+		Cube cube = cityCubeMap.get(city).get(desease).iterator().next();
+		cityCubeMap.get(city).get(desease).remove(cube);
 		return cube;
 	}
 	
@@ -265,23 +336,162 @@ public class GameStatus implements Serializable {
 		return false;
 	}
 
-	public void nextStep(GameStep turnstart) {
+	public void nextStep(GameStep nextStep) {
 		if(!isOver()) {
-			setGameStep(gameStep);
+			setGameStep(nextStep);
 		}
 	}
 	
-	public boolean isOver() {
-		if(gameStep == GameStep.lose || isWin()) {
-			return true;
-		}
-		return false;
+	public boolean setCharacterPosition(Character currentPlayer, City destination) {
+		this.characterPositionMap.put(currentPlayer, destination);
+		return true;
 	}
 
-	public boolean isWin() {
-		if(gameStep == GameStep.win) {
-			return true;
+	public Hand getCharacterHand(Character character) {
+		return this.characterHandMap.get(character);
+	}
+
+	public List<Hand> getCharacterHandList() {
+		return this.characterHandList;
+	}
+
+	public Set<Cube> getCityCubeSet(City city, Desease desease) {
+		return cityCubeMap.get(city).get(desease);
+	}
+
+	public boolean hasResearchCenter(City city) {
+		return this.cityResearchCenterMap.get(city) != null;
+	}
+
+	public Set<Desease> getCuredDeseaseSet() {
+		return this.curedDeseaseSet;
+	}
+
+	public Set<Desease> getEradicatedDeseaseSet() {
+		return this.eradicatedDeseaseSet;
+	}
+
+	public boolean addCuredDesease(Desease desease) {
+		return this.curedDeseaseSet.add(desease);
+	}
+
+	public boolean isCubeReserveFull(Desease desease) {
+		return this.cubeCurrentReserve.get(desease).size() == GameProperties.cubeReserve.get(desease).size();
+		
+	}
+	
+	public Map<Desease, Set<Cube>> getCubeCurrentReserve(Desease desease) {
+		return this.cubeCurrentReserve;
+		
+	}
+
+	public boolean addEradicatedDesease(Desease desease) {
+		return this.eradicatedDeseaseSet.add(desease);
+	}
+
+	public int getCurrentActionCount() {
+		return this.currentActionCount;
+	}
+
+	public void decreaseCurrentActionCount(int i) {
+		this.currentActionCount = currentActionCount - i;
+	}
+	
+	public GameStatus clone() {
+		GameStatus gameStatus = new GameStatus();
+		gameStatus.simulation = true;
+		gameStatus.actionList = new LinkedList<GameAction>(this.actionList);
+		gameStatus.previousActionList = new LinkedList<GameAction>(this.previousActionList);
+		
+		gameStatus.alreadyEcloded = new HashSet<City>();
+		gameStatus.turnCounter = this.turnCounter;
+		gameStatus.eclosionCounter = this.eclosionCounter;
+		gameStatus.currentActionCount = this.currentActionCount;
+		gameStatus.gameStep = this.gameStep;
+		
+		
+		gameStatus.propagationDeck = propagationDeck.clone();
+		gameStatus.playerDeck = playerDeck.clone();
+		
+		gameStatus.characterHandList = new LinkedList<Hand>();	
+		gameStatus.characterHandMap = new HashMap<Character, Hand>();
+		for(Hand hand : this.characterHandList) {
+			Hand handClone = (Hand) hand.clone();
+			gameStatus.characterHandList.add(handClone);
+			gameStatus.characterHandMap.put(handClone.getCharacter(), handClone);
+			if(hand == currentHand) {
+				gameStatus.currentHand = handClone;
+			}
 		}
-		return false;
+		
+		gameStatus.characterPositionMap = new HashMap<Character, City>();
+		gameStatus.characterPositionMap.putAll(this.characterPositionMap);
+		
+		gameStatus.cityCubeMap = new HashMap<City, Map<Desease, Set<Cube>>>();
+		for(City city : this.cityCubeMap.keySet()) {
+			HashMap<Desease, Set<Cube>> deseaseCubeMap = new HashMap<Desease, Set<Cube>>();
+			for(Desease desease : this.cityCubeMap.get(city).keySet()) {
+				HashSet<Cube> cubeSet = new HashSet<Cube>();
+				cubeSet.addAll(this.cityCubeMap.get(city).get(desease));
+				deseaseCubeMap.put(desease, cubeSet);
+			}
+			gameStatus.cityCubeMap.put(city, deseaseCubeMap);
+		}
+		
+		gameStatus.cityResearchCenterMap = new HashMap<City, ResearchCenter>();
+		gameStatus.cityResearchCenterMap.putAll(this.cityResearchCenterMap);
+
+		gameStatus.researchCenterCurrentReserve = new HashSet<ResearchCenter>();
+		gameStatus.researchCenterCurrentReserve.addAll(this.researchCenterCurrentReserve);
+		
+		gameStatus.cubeCurrentReserve = new HashMap<Desease, Set<Cube>>();
+		for(Desease desease : this.cubeCurrentReserve.keySet()) {
+			HashSet<Cube> cubeSet = new HashSet<Cube>();
+			cubeSet.addAll(this.cubeCurrentReserve.get(desease));
+			gameStatus.cubeCurrentReserve.put(desease, cubeSet);
+		}
+		
+		gameStatus.curedDeseaseSet = new HashSet<Desease>();
+		gameStatus.curedDeseaseSet.addAll(this.curedDeseaseSet);
+		
+		gameStatus.eradicatedDeseaseSet = new HashSet<Desease>();
+		gameStatus.eradicatedDeseaseSet.addAll(this.eradicatedDeseaseSet);
+		return gameStatus;
+	}
+
+	public boolean isSimulation() {
+		return this.simulation;
+	}
+
+	public Set<City> getAlreadyEclodedCities() {
+		return this.alreadyEcloded;
+	}
+	
+	public void addEclodedCity(City city) {
+		this.alreadyEcloded.add(city);
+	}
+	
+	public void addEclodedCity(Collection<? extends City> citySet) {
+		this.alreadyEcloded.addAll(citySet);
+	}
+	
+	public void clearEclodedCity() {
+		this.alreadyEcloded.clear();
+	}
+
+	public void setEclosionStart(City city) {
+		this.eclosionStart = city;
+	}
+
+	public City getEclosionStart() {
+		return this.eclosionStart;
+	}
+
+	public int getEpidemicCounter() {
+		return this.playerDeck.getEpidemicCounter();
+	}
+
+	public Set<ResearchCenter> getResearchCenterCurrentReserve() {
+		return this.researchCenterCurrentReserve;
 	}
 }

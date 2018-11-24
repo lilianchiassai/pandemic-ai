@@ -1,43 +1,53 @@
 package ai.mcts;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import game.Game;
+import game.GameEngine;
+import game.GameProperties;
+import game.GameRules;
 import game.GameStatus;
+import game.RolloutPlayer;
+import game.action.GameAction;
 
 public class MonteCarloTreeSearch {
 	
 	private static Logger logger = LogManager.getLogger(MonteCarloTreeSearch.class.getName());
 	
-	MCTSNode<Game> root;
-	int timeLimit;
+	MCTSNode root;
+	int limit;
 	long iterationTime;
+	int iterationCounter;
+	RolloutPlayer rolloutPlayer;
+	
+	ArrayList<Integer> weightedActionMap;
 	
 	
-	public MonteCarloTreeSearch(GameStatus game, int timeLimit) {
-		this.root = new MCTSNode(game.clone());
-		this.timeLimit = timeLimit;
+	public MonteCarloTreeSearch(GameStatus gameStatus, int limit, RolloutPlayer player) {
+		this.root = new MCTSNode((GameStatus)gameStatus.clone(), null);
+		this.limit = limit;
+		rolloutPlayer = player;
+		rolloutPlayer.setMCTS(this);
+		this.weightedActionMap = new ArrayList<Integer>();
 	}
-	
+
 	public MCTSNode run() {
-		logger.info("New run");
-		
 		if(root.isTerminal()) {
 			return root;
 		} else {
 			iterationTime = System.currentTimeMillis();
+			iterationCounter = 0;
 			while(resourceAvailable()) {
-				MCTSNode leaf = traverse(root);
-				
-				MCTSNode terminalNode = rollout(leaf);
-				backpropagate(leaf, terminalNode);
-				logger.info("New iteration");
+				MCTSNode leaf = traverse(root);	
+				GameStatus terminalStatus = rollout(leaf);
+				backpropagate(leaf, terminalStatus);
+				iterationCounter++;
 			}
-			root = bestChild(root);
-			return root;
+			return bestChild(root);
 		}
 	}
 	
@@ -46,6 +56,7 @@ public class MonteCarloTreeSearch {
 			return bestUCTChild(node);
 		} else {
 			if(!node.isTerminal()) {
+				node.expand();
 				return bestUnvisitedChild(node);
 			} else {
 				return null;
@@ -53,23 +64,43 @@ public class MonteCarloTreeSearch {
 		}
 	}
 	
-	public MCTSNode rollout(MCTSNode rolloutRootNode) {
-		MCTSNode node = rolloutRootNode.clone();
-		while(!node.isTerminal()) {
-			node = rolloutPolicy(node);
+	public GameStatus rollout(MCTSNode leaf) {
+		GameStatus gameStatus = leaf.getGameStatus().clone();
+		rolloutPlayer.setGameStatus(gameStatus);
+		GameEngine gameEngine = new GameEngine(gameStatus, rolloutPlayer);
+		return gameEngine.run();
+	}
+	
+	public GameAction rolloutPolicy(GameStatus gameStatus) {
+		//Get all possible actions
+		weightedActionMap.clear();
+		List<GameAction> actionList = GameRules.getAllPossibleActions(gameStatus);
+		
+		if(actionList.size()>0) {
+			
+			
+			for(int i = 0; i<actionList.size(); i++) {
+				int weight = GameProperties.getActionWeight(gameStatus, actionList.get(i));
+				for(int k = 0; k<weight; k++) {
+					weightedActionMap.add(i);
+				}
+			}
+			//Pick one at random
+			int random = (int) (Math.random() *weightedActionMap.size()*10/10);
+			//Perform
+			GameAction gameAction = actionList.get(weightedActionMap.get(random));
+
+			return gameAction;
+		} else {
+			return null;
 		}
-		return node;
 	}
 	
-	public MCTSNode rolloutPolicy(MCTSNode node) {
-		return (MCTSNode) node.getChildren().get(((int) ((Math.random() * 10)/10))*node.getChildren().size());
-	}
-	
-	public void backpropagate(MCTSNode leaf, MCTSNode terminalNode) {
+	public void backpropagate(MCTSNode leaf, GameStatus terminalStatus) {
 		if(leaf.isRoot()) {
 			return;
 		}
-		leaf.updateStats(terminalNode);
+		leaf.updateStats(terminalStatus);
 	}
 	
 	public MCTSNode bestChild(MCTSNode node) {
@@ -88,17 +119,15 @@ public class MonteCarloTreeSearch {
 	public MCTSNode bestUCTChild(MCTSNode node) {
 		//TODO sort children list to perform a quicker max ?
 		double max = 0;
-		MCTSNode result = null;
-		for(Object child : node.getVisitedChildren()) {
-			if(max<((MCTSNode)child).getUct()) {
-				max = ((MCTSNode)child).getUct();
+		MCTSNode result = node.getVisitedChildren().iterator().next();
+		for(MCTSNode child : node.getVisitedChildren()) {
+			if(max<child.getUCT()) {
+				max = child.getUCT();
 				result =(MCTSNode) child;
 			}
 		}
 		return result;
 	}
-	
-	
 	
 	public MCTSNode bestUnvisitedChild(MCTSNode node) {
 		//TODO pick at random only between unvisited nodes
@@ -106,7 +135,17 @@ public class MonteCarloTreeSearch {
 	}
 	
 	public boolean resourceAvailable() {
-		System.out.println(iterationTime + timeLimit > System.currentTimeMillis());
-		return iterationTime + timeLimit > System.currentTimeMillis();
+		//return iterationTime + timeLimit > System.currentTimeMillis();
+		return iterationCounter<this.limit;
+	}
+
+	public void setRoot(GameStatus gameStatus) {
+		GameStatus clone = (GameStatus)gameStatus.clone();
+		clone.previousActionList = new LinkedList<GameAction>();
+		this.root = new MCTSNode(clone, null);
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
 	}
 }

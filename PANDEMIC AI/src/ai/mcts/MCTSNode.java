@@ -3,112 +3,136 @@ package ai.mcts;
 import java.util.ArrayList;
 import java.util.List;
 
-import game.Game;
+import game.GameProperties;
+import game.GameRules;
+import game.GameStatus;
 import game.action.GameAction;
 
-public class MCTSNode<T> extends Node implements Comparable {
+public class MCTSNode {
+	public GameStatus gameStatus;
+    private MCTSNode parent;
+    private List<MCTSNode> unvisitedChildren;
+    private List<MCTSNode> visitedChildren;
 	
-	boolean fullyExpanded;
-	boolean expanded;
-	boolean terminal;
+    boolean fullyExpanded;
+    boolean expanded;
 	int visitCount;
 	int victoryCount;
 	int visited;
-	double uct;
-	List<GameAction> actionList;
+	//GameAction gameAction;
 	
-	public MCTSNode(MCTSNode node) {
-		super(((Game)node.getData()).clone(), node.getParent());
-		fullyExpanded = node.fullyExpanded;
-		expanded = node.expanded;
-		terminal = node.terminal;
-		visitCount = 0;
-		victoryCount = 0;
-		uct = 0.0;
-		actionList = new ArrayList<GameAction>();
-		
+    public MCTSNode(GameStatus gameStatus, MCTSNode parent) {
+    	this.gameStatus=gameStatus;
+        this.parent=parent;
+        this.unvisitedChildren=new ArrayList<MCTSNode>();
+        this.visitedChildren=new ArrayList<MCTSNode>();
+    	this.fullyExpanded=false;
+    	this.fullyExpanded=false;
+    	this.visitCount=0;
+    	this.victoryCount=0;
+    	this.visited=0;
+    	List<GameAction> actionList=new ArrayList<GameAction>();
     }
 
-	public MCTSNode clone() {
-		MCTSNode clone = new MCTSNode(this);
-		for(Object child : this.getUnvisitedChildren()) {
-			clone.addUnVisitedChild(new MCTSNode(child));
-		}
-		for(Object child : this.getVisitedChildren()) {
-			clone.addVisitedChild(new MCTSNode(child));
-		}
-		return clone;
+	public MCTSNode getParent() {
+		return this.parent;
 	}
 	
-	public MCTSNode(T data) {
-		super(data);
-		fullyExpanded = false;
-		expanded = false;
-		terminal = false;
-		visitCount = 0;
-		victoryCount = 0;
-		uct = 0.0;
-		actionList = new ArrayList<GameAction>();
-    }
-    
-    public MCTSNode(T data, Node<T> parent) {
-    	super(data, parent);
-    }
+	public boolean isRoot() {
+		return this.parent == null;
+	}
+	
+	protected void addChild(MCTSNode node) {
+		this.unvisitedChildren.add(node);
+	}
 
-	public boolean isFullyExpanded() {	
+	public GameStatus getGameStatus() {
+		return this.gameStatus;
+	}
+	
+	public List<MCTSNode> getUnvisitedChildren() {
+		return this.unvisitedChildren;
+	}
+	
+	public List<MCTSNode> getVisitedChildren() {
+		return this.visitedChildren;
+	}
+	
+	public boolean removeUnvisitedChild(MCTSNode node) {
+		return this.unvisitedChildren.remove(node);
+	}
+	
+	public void addUnVisitedChild(MCTSNode node) {
+		this.unvisitedChildren.add(node);
+	}
+	
+	public void removeVisitedChild(MCTSNode node) {
+		this.visitedChildren.remove(node);
+	}
+	
+	public void addVisitedChild(MCTSNode node) {
+		this.visitedChildren.add(node);
+	}
+    
+	public boolean isFullyExpanded() {
+		/*if(isTerminal()) {
+			this.fullyExpanded = true;
+		}*/
 		return this.fullyExpanded;
 	}
 
 	public boolean isTerminal() {
-		if(terminal) {
-			return true;
-		} else {
-			return !expand();
-		}
+		return gameStatus.isOver();
 	}
 
-	private boolean expand() {
-		((Game)this.getData()).setPossibleActionList(new ArrayList<GameAction>());
-		Game clone = ((Game)this.getData()).clone();
-		ArrayList<Game> gameChildren = clone.getAllPossibleNextGames();
-		if(clone.isOver()) {
-			terminal = true;
-			expanded = true;
+	public boolean expand() {
+		if(isTerminal()) {
 			fullyExpanded = true;
-		} else {
-			for(Game game : gameChildren) {
-				//TODO : improve by removing node with matching game states
-				this.addChild(new MCTSNode<Game>(game, this));
-			}
-			expanded = true;
+			return true;
 		}
-		return expanded && !terminal;
+		if(isExpanded()) {
+			return true;
+		}
+		
+		this.expanded=true;
+		List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus);
+		for(GameStatus gameStatus : gameStatusSet) {
+			MCTSNode node = new MCTSNode(gameStatus, this);
+			GameProperties.getWeight(gameStatus);
+			this.addChild(node);
+		}
+		return false;
 	}
 
-	private void updateUct() {
-		this.uct = this.getVictoryCount()/this.getVisitCount() + Math.sqrt(Math.log10(((MCTSNode)this.getParent()).getVisitCount()/this.getVisitCount()));
-	}
-	
-	public double getUct() {
-		return this.uct;
+	private boolean isExpanded() {
+		return this.expanded;
 	}
 
-	public void updateStats(Node terminalNode) {
+	public double getUCT() {
+		return (gameStatus.value - this.getParent().getGameStatus().value) * (this.getVictoryCount()/this.getVisitCount() + 2*Math.sqrt(Math.log(this.getParent().getVisitCount())/this.getVisitCount()));
+
+		//return GameProperties.getActionWeight(gameStatus, gameAction) * (this.getVictoryCount()/this.getVisitCount() + 2*Math.sqrt(Math.log(this.getParent().getVisitCount())/this.getVisitCount()));
+	}
+
+	public void updateStats(GameStatus terminalStatus) {
+		GameProperties.visitCount++;
 		this.visitCount++;
-		if(((Game) terminalNode.getData()).isWin()) {
+		if(terminalStatus.isWin()) {
 			this.victoryCount++;
+			GameProperties.victoryCount++;
 		}
-		this.updateUct();
+		
 			
 		if(!isRoot()) {
-			((MCTSNode<Game>) this.getParent()).visitCount++;
-			((MCTSNode<Game>) this.getParent()).visitChild(this);
+			this.getParent().visitCount++;
+			this.getParent().visitChild(this);
 		}
 	}
 
 	public void visitChild(MCTSNode node) {
-		this.removeUnvisitedChild(node);
-		this.addVisitedChild(node);
+		if (!this.fullyExpanded && this.removeUnvisitedChild(node)) {
+			this.addVisitedChild(node);
+		}
 		if(this.getUnvisitedChildren().size() == 0) {
 			this.fullyExpanded = true;
 		}
@@ -125,28 +149,8 @@ public class MCTSNode<T> extends Node implements Comparable {
 	public boolean isVisited() {
 		return this.visitCount>0;
 	}
-	
-	@Override
-	public int compareTo(Object o) {
-		if(this.isVisited() && ((MCTSNode) o).isVisited()) {
-			return 0;
-		} else if (this.isVisited()  && !((MCTSNode) o).isVisited()) {
-			return 1;
-		} else if (!this.isVisited()  && ((MCTSNode) o).isVisited()) {
-			return -1;
-		}
-		if(this.uct>((MCTSNode)o).getUct()) {
-			return 1;
-		} else if(this.uct == ((MCTSNode)o).getUct()) {
-			return 0;
-		} else {
-			return -1;
-		}
-	}
 
-	public List<GameAction> getActionList() {
-		return ((Game)this.getData()).getPossibleActionList();
-	}
-	
-	
+	/*public GameAction getAction() {
+		return this.gameAction;
+	}*/
 }

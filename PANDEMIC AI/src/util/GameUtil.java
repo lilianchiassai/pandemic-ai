@@ -9,19 +9,32 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 
-import game.Game;
 import game.GameProperties;
+import game.GameStatus;
 import objects.Character;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
 import objects.card.Card;
 import objects.card.CityCard;
+import objects.card.PlayerCard;
 
 public class GameUtil {
+	
+	
+	
+	public static void log(GameStatus gameStatus, Logger logger, String message) {
+		if(gameStatus.isSimulation()) {
+			logger.debug(message);
+		} else {
+			logger.info(message);
+		}
+	}
+	
 	public static Predicate<Cube> getCubePredicate(Desease desease) {
 		return (cube) -> (cube.getDesease() == desease);
 	}
@@ -36,7 +49,7 @@ public class GameUtil {
 	}
 
 	public static Predicate<? super CityCard> getCityCardPredicate(Desease desease) {
-		return (card) -> (card.getClass().isAssignableFrom(CityCard.class) && ((CityCard)card).getCity().getDesease() == desease);
+		return (card) -> (((CityCard)card).getCity().getDesease() == desease);
 	}
 
 	public static Predicate<? super City> getCityNamePredicate(String name) {
@@ -70,7 +83,7 @@ public class GameUtil {
 	}
 	
 	public static City getCity(String cityName) {
-		Set<City> citySet = (Set<City>) GameProperties.map.vertexSet().stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
+		Set<City> citySet = (Set<City>) GameProperties.map.stream().filter(GameUtil.getCityNamePredicate(cityName)).collect(Collectors.toSet());
 		if(citySet != null) {
 			Iterator<City> it = citySet.iterator();
 			if(it.hasNext()) {
@@ -79,9 +92,18 @@ public class GameUtil {
 		}
 		return null;
 	}
+	
+	public static Character getCardOwner(GameStatus gameStatus, Card card) {
+		for(Character character : GameProperties.characterReserve) {
+			if(gameStatus.getCharacterHand(character).getCardDeck().contains(card)) {
+				return character;
+			}
+		}
+		return null;
+	}
 
 	public static Character getPlayer(String playerName) {
-		Set<Character> playerSet =  (Set<Character>) GameProperties.characterReserve.getCharacterList().stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
+		Set<Character> playerSet =  (Set<Character>) GameProperties.characterReserve.stream().filter(GameUtil.getCharacterNamePredicate(playerName)).collect(Collectors.toSet());
 		if(playerSet != null) {
 			Iterator<Character> it = playerSet.iterator();
 			if(it.hasNext()) {
@@ -121,5 +143,16 @@ public class GameUtil {
  
         return copied;
     }
+
+	public static Card getCard(String title) {
+		Set<PlayerCard> cardSet = (Set<PlayerCard>) GameProperties.playerCardReserve.stream().filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
+		if(cardSet != null) {
+			Iterator<PlayerCard> it = cardSet.iterator();
+			if(it.hasNext()) {
+				return it.next();
+			}
+		}
+		return null;
+	}
 	
 }

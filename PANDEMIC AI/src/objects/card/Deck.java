@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 import objects.Desease;
 import util.GameUtil;
 
-public class Deck implements Serializable {
+public class Deck {
 	protected LinkedList<Card> cardDeck;
-	private Deck discardPile;
-	private Class cardClass = null;
+	protected Deck discardPile;
+	protected Class cardClass = null;
 	
 	public Deck(Class cardClass) {
 		this.cardDeck = new LinkedList<Card>();
@@ -35,8 +35,9 @@ public class Deck implements Serializable {
 		this.cardClass = cardClass;
 	}
 	
-	public void shuffle() {
+	public Deck shuffle() {
 		Collections.shuffle(cardDeck);
+		return this;
 	}
 	
 	public boolean addOnTop(Card card) {
@@ -64,27 +65,13 @@ public class Deck implements Serializable {
 		return true;
 	}
 	
-	public LinkedList<Deck> split(int numberOfSubdecks) {
-		LinkedList<Deck> partitions = new LinkedList<Deck>();
-		int subDeckSize = cardDeck.size() / numberOfSubdecks;
-		int rest = cardDeck.size() % numberOfSubdecks;
-		
-		for (int i = 0; i < cardDeck.size(); i += subDeckSize) {
-			if((numberOfSubdecks - rest) * subDeckSize == i) {
-				subDeckSize++;
-			}
-			Deck deck = new Deck(cardClass, new LinkedList<>(cardDeck.subList(i, i+subDeckSize)));
-		    partitions.add(deck);
-		}
-		
-		cardDeck.clear();
-		return partitions;
-	}
+
+
 	
 	public Card draw() {
 		if(cardDeck.size()>0) {
 			Card card = cardDeck.getLast();
-			cardDeck.remove(card);
+			cardDeck.removeLast();
 			return card;
 		} else {
 			return null;
@@ -92,13 +79,21 @@ public class Deck implements Serializable {
 	}
 	
 	public Card drawBottomCard() {
-		Card card = cardDeck.getFirst();
-		cardDeck.remove(card);
-		return card;
+		if(cardDeck.size()>0) {
+			Card card = cardDeck.getFirst();
+			cardDeck.removeFirst();
+			return card;
+		} else {
+			return null;
+		}
 	}
 	
 	public boolean discard(Card card) {
-		this.cardDeck.remove(card);
+		return this.discardPile.addOnTop(card);
+	}
+	
+	public boolean removeAndDiscard(Card card) {
+		this.cardDeck.removeLastOccurrence(card);
 		return this.discardPile.addOnTop(card);
 	}
 	
@@ -132,4 +127,16 @@ public class Deck implements Serializable {
 		}
 		return null;
 	}
+	
+	public Deck clone() {
+		Deck clone = new Deck(this.cardClass);
+		clone.cardDeck = new LinkedList<Card>();
+		clone.cardDeck.addAll(this.cardDeck);
+		Collections.shuffle(clone.cardDeck);
+		
+		clone.discardPile = this.discardPile != null ? this.discardPile.clone() : null;
+		return clone;
+	}
+
+
 }

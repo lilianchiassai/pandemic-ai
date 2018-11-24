@@ -1,15 +1,15 @@
 package game;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.DirectedMultigraph;
 
 import game.action.Build;
 import game.action.CharterFlight;
@@ -17,6 +17,7 @@ import game.action.Cure;
 import game.action.DirectFlight;
 import game.action.Drive;
 import game.action.GameAction;
+import game.action.Pass;
 import game.action.ShareKnowledge;
 import game.action.ShuttleFlight;
 import game.action.Treat;
@@ -25,10 +26,10 @@ import objects.City;
 import objects.Cube;
 import objects.Desease;
 import objects.ResearchCenter;
-import objects.Reserve;
+import objects.card.Card;
 import objects.card.CityCard;
-import objects.card.Deck;
 import objects.card.EpidemicCard;
+import objects.card.Hand;
 import objects.card.PlayerCard;
 import objects.card.PropagationCard;
 import util.GameUtil;
@@ -38,16 +39,25 @@ public class GameProperties {
 	private static Logger logger = LogManager.getLogger(GameProperties.class.getName());
 	
 	public static Set<Class<? extends GameAction>> actionTypeSet;
+	public static Build buildAction;
+	public static Pass passAction;
+	public static Map<Desease,Treat> treatAction;
+	
 	static int maxEclosionCounter;	
 	public static int actionCount;
 	static int[] propagationSpeed;
 	public static Set<Desease> deseaseSet;
-	public static Graph<City, DefaultEdge> map;
+	public static Set<City> map;
 	static Map<Desease, Set<Cube>> cubeReserve;
 	static Set<ResearchCenter> researchCenterReserve;
-	static Set<PlayerCard> playerCardReserve;
+	public static Set<PlayerCard> playerCardReserve;
 	static Set<PropagationCard> propagationCardReserve;
-	static Set<EpidemicCard> epidemicCardReserve;
+	public static EpidemicCard epidemicCardReserve;
+	public static LinkedList<Character> characterReserve;
+
+	public static int visitCount = 0;
+
+	public static int victoryCount = 0;
 	
 	public GameProperties() {
 		logger.info("Instantiating new game.");
@@ -69,7 +79,7 @@ public class GameProperties {
 		GameProperties.deseaseSet.add(red);
 		GameProperties.deseaseSet.add(black);
 		
-		GameProperties.map = new DirectedMultigraph<>(DefaultEdge.class);
+		GameProperties.map = new HashSet<City>();
 		
 		logger.info("Creating city network.");
 		City sanFrancisco = new City("San Francisco", blue, 21000);
@@ -125,156 +135,255 @@ public class GameProperties {
 		City sydney = new City("Sydney", red, 21000);
 		
 		// Create map
-		map.addVertex(sanFrancisco);
-		map.addVertex(chicago);
-		map.addVertex(atlanta);
-		map.addVertex(montreal);
-		map.addVertex(washington);
-		map.addVertex(newYork);
-		map.addVertex(madrid);
-		map.addVertex(london);
-		map.addVertex(paris);
-		map.addVertex(essen);
-		map.addVertex(milan);
-		map.addVertex(saintPetersbourg);
+		map.add(sanFrancisco);
+		map.add(chicago);
+		map.add(atlanta);
+		map.add(montreal);
+		map.add(washington);
+		map.add(newYork);
+		map.add(madrid);
+		map.add(london);
+		map.add(paris);
+		map.add(essen);
+		map.add(milan);
+		map.add(saintPetersbourg);
 
-		map.addVertex(losAngeles);
-		map.addVertex(mexicoCity);
-		map.addVertex(miami);
-		map.addVertex(bogota);
-		map.addVertex(lima);
-		map.addVertex(santiago);
-		map.addVertex(buenosAires);
-		map.addVertex(saoPaulo);
-		map.addVertex(lagos);
-		map.addVertex(khinshasa);
-		map.addVertex(johannesburg);
-		map.addVertex(khartoum);
+		map.add(losAngeles);
+		map.add(mexicoCity);
+		map.add(miami);
+		map.add(bogota);
+		map.add(lima);
+		map.add(santiago);
+		map.add(buenosAires);
+		map.add(saoPaulo);
+		map.add(lagos);
+		map.add(khinshasa);
+		map.add(johannesburg);
+		map.add(khartoum);
 
-		map.addVertex(algers);
-		map.addVertex(cairo);
-		map.addVertex(istanbul);
-		map.addVertex(moscow);
-		map.addVertex(baghdad);
-		map.addVertex(ryadh);
-		map.addVertex(teheran);
-		map.addVertex(karachi);
-		map.addVertex(mumbai);
-		map.addVertex(delhi);
-		map.addVertex(chennai);
-		map.addVertex(kolkata);
+		map.add(algers);
+		map.add(cairo);
+		map.add(istanbul);
+		map.add(moscow);
+		map.add(baghdad);
+		map.add(ryadh);
+		map.add(teheran);
+		map.add(karachi);
+		map.add(mumbai);
+		map.add(delhi);
+		map.add(chennai);
+		map.add(kolkata);
 
-		map.addVertex(bangkok);
-		map.addVertex(jakarta);
-		map.addVertex(hoChiMinhCity);
-		map.addVertex(hongKong);
-		map.addVertex(shangai);
-		map.addVertex(beijing);
-		map.addVertex(seoul);
-		map.addVertex(tokyo);
-		map.addVertex(osaka);
-		map.addVertex(taipei);
-		map.addVertex(manila);
-		map.addVertex(sydney);
+		map.add(bangkok);
+		map.add(jakarta);
+		map.add(hoChiMinhCity);
+		map.add(hongKong);
+		map.add(shangai);
+		map.add(beijing);
+		map.add(seoul);
+		map.add(tokyo);
+		map.add(osaka);
+		map.add(taipei);
+		map.add(manila);
+		map.add(sydney);
 		
-		map.addEdge(sanFrancisco, losAngeles);
-		map.addEdge(sanFrancisco, tokyo);
-		map.addEdge(sanFrancisco, manila);
-		map.addEdge(sanFrancisco, chicago);	
-		map.addEdge(chicago, losAngeles);
-		map.addEdge(chicago, mexicoCity);
-		map.addEdge(chicago, atlanta);
-		map.addEdge(chicago, montreal);	
-		map.addEdge(montreal, washington);
-		map.addEdge(montreal, newYork);	
-		map.addEdge(newYork, london);
-		map.addEdge(newYork, washington);
-		map.addEdge(newYork, madrid);	
-		map.addEdge(washington, atlanta);
-		map.addEdge(washington, miami);	
-		map.addEdge(atlanta, miami);	
-		map.addEdge(losAngeles, mexicoCity);
-		map.addEdge(losAngeles, sydney);		
-		map.addEdge(mexicoCity, miami);
-		map.addEdge(mexicoCity, bogota);
-		map.addEdge(mexicoCity, lima);		
-		map.addEdge(bogota, miami);
-		map.addEdge(bogota, lima);
-		map.addEdge(bogota, buenosAires);
-		map.addEdge(bogota, saoPaulo);		
-		map.addEdge(lima, santiago);		
-		map.addEdge(buenosAires, saoPaulo);		
-		map.addEdge(saoPaulo, lagos);
-		map.addEdge(saoPaulo, madrid);		
-		map.addEdge(london, madrid);
-		map.addEdge(london, paris);
-		map.addEdge(london, essen);		
-		map.addEdge(madrid, paris);
-		map.addEdge(madrid, algers);		
-		map.addEdge(paris, essen);
-		map.addEdge(paris, algers);
-		map.addEdge(paris, milan);		
-		map.addEdge(essen, milan);
-		map.addEdge(essen, saintPetersbourg);		
-		map.addEdge(saintPetersbourg, moscow);
-		map.addEdge(saintPetersbourg, istanbul);		
-		map.addEdge(milan, istanbul);	
-		map.addEdge(istanbul, algers);
-		map.addEdge(istanbul, cairo);
-		map.addEdge(istanbul, baghdad);
-		map.addEdge(istanbul, moscow);		
-		map.addEdge(cairo, algers);
-		map.addEdge(cairo, baghdad);
-		map.addEdge(cairo, ryadh);
-		map.addEdge(cairo, khartoum);		
-		map.addEdge(khartoum, lagos);
-		map.addEdge(khartoum, khinshasa);
-		map.addEdge(khartoum, johannesburg);		
-		map.addEdge(khinshasa, lagos);
-		map.addEdge(khinshasa, johannesburg);		
-		map.addEdge(baghdad, teheran);
-		map.addEdge(baghdad, karachi);
-		map.addEdge(baghdad, ryadh);		
-		map.addEdge(teheran, moscow);
-		map.addEdge(teheran, karachi);
-		map.addEdge(teheran, delhi);		
-		map.addEdge(karachi, ryadh);
-		map.addEdge(karachi, delhi);
-		map.addEdge(karachi, mumbai);		
-		map.addEdge(delhi, mumbai);
-		map.addEdge(delhi, chennai);
-		map.addEdge(delhi, kolkata);		
-		map.addEdge(mumbai, chennai);		
-		map.addEdge(chennai, kolkata);
-		map.addEdge(chennai, bangkok);
-		map.addEdge(chennai, jakarta);		
-		map.addEdge(kolkata, bangkok);
-		map.addEdge(kolkata, hongKong);		
-		map.addEdge(bangkok, jakarta);
-		map.addEdge(bangkok, hongKong);
-		map.addEdge(bangkok, hoChiMinhCity);		
-		map.addEdge(jakarta, hoChiMinhCity);
-		map.addEdge(jakarta, sydney);		
-		map.addEdge(hoChiMinhCity, manila);
-		map.addEdge(hoChiMinhCity, hongKong);		
-		map.addEdge(manila, sydney);
-		map.addEdge(manila, hongKong);
-		map.addEdge(manila, taipei);		
-		map.addEdge(hongKong, taipei);
-		map.addEdge(hongKong, shangai);		
-		map.addEdge(shangai, taipei);
-		map.addEdge(shangai, beijing);
-		map.addEdge(shangai, seoul);
-		map.addEdge(shangai, tokyo);	
-		map.addEdge(taipei, osaka);		
-		map.addEdge(osaka, tokyo);		
-		map.addEdge(tokyo, seoul);
-		map.addEdge(seoul, beijing);
-		
-		map = GameUtil.makeBidirectionnal(map);
+		sanFrancisco.addNeighbour(losAngeles);
+		losAngeles.addNeighbour(sanFrancisco);
+		sanFrancisco.addNeighbour(tokyo);
+		tokyo.addNeighbour(sanFrancisco);
+		sanFrancisco.addNeighbour(manila);
+		manila.addNeighbour(sanFrancisco);
+		sanFrancisco.addNeighbour(chicago);
+		chicago.addNeighbour(sanFrancisco);	
+		chicago.addNeighbour(losAngeles);
+		losAngeles.addNeighbour(chicago);
+		chicago.addNeighbour(mexicoCity);
+		mexicoCity.addNeighbour(chicago);
+		chicago.addNeighbour(atlanta);
+		atlanta.addNeighbour(chicago);
+		chicago.addNeighbour(montreal);
+		montreal.addNeighbour(chicago);	
+		montreal.addNeighbour(washington);
+		washington.addNeighbour(montreal);
+		montreal.addNeighbour(newYork);
+		newYork.addNeighbour(montreal);	
+		newYork.addNeighbour(london);
+		london.addNeighbour(newYork);
+		newYork.addNeighbour(washington);
+		washington.addNeighbour(newYork);
+		newYork.addNeighbour(madrid);
+		madrid.addNeighbour(newYork);	
+		washington.addNeighbour(atlanta);
+		atlanta.addNeighbour(washington);
+		washington.addNeighbour(miami);
+		miami.addNeighbour(washington);	
+		atlanta.addNeighbour(miami);
+		miami.addNeighbour(atlanta);	
+		losAngeles.addNeighbour(mexicoCity);
+		mexicoCity.addNeighbour(losAngeles);
+		losAngeles.addNeighbour(sydney);
+		sydney.addNeighbour(losAngeles);		
+		mexicoCity.addNeighbour(miami);
+		miami.addNeighbour(mexicoCity);
+		mexicoCity.addNeighbour(bogota);
+		bogota.addNeighbour(mexicoCity);
+		mexicoCity.addNeighbour(lima);
+		lima.addNeighbour(mexicoCity);		
+		bogota.addNeighbour(miami);
+		miami.addNeighbour(bogota);
+		bogota.addNeighbour(lima);
+		lima.addNeighbour(bogota);
+		bogota.addNeighbour(buenosAires);
+		buenosAires.addNeighbour(bogota);
+		bogota.addNeighbour(saoPaulo);
+		saoPaulo.addNeighbour(bogota);		
+		lima.addNeighbour(santiago);
+		santiago.addNeighbour(lima);		
+		buenosAires.addNeighbour(saoPaulo);
+		saoPaulo.addNeighbour(buenosAires);		
+		saoPaulo.addNeighbour(lagos);
+		lagos.addNeighbour(saoPaulo);
+		saoPaulo.addNeighbour(madrid);
+		madrid.addNeighbour(saoPaulo);		
+		london.addNeighbour(madrid);
+		madrid.addNeighbour(london);
+		london.addNeighbour(paris);
+		paris.addNeighbour(london);
+		london.addNeighbour(essen);
+		essen.addNeighbour(london);		
+		madrid.addNeighbour(paris);
+		paris.addNeighbour(madrid);
+		madrid.addNeighbour(algers);
+		algers.addNeighbour(madrid);		
+		paris.addNeighbour(essen);
+		essen.addNeighbour(paris);
+		paris.addNeighbour(algers);
+		algers.addNeighbour(paris);
+		paris.addNeighbour(milan);
+		milan.addNeighbour(paris);		
+		essen.addNeighbour(milan);
+		milan.addNeighbour(essen);
+		essen.addNeighbour(saintPetersbourg);
+		saintPetersbourg.addNeighbour(essen);		
+		saintPetersbourg.addNeighbour(moscow);
+		moscow.addNeighbour(saintPetersbourg);
+		saintPetersbourg.addNeighbour(istanbul);
+		istanbul.addNeighbour(saintPetersbourg);		
+		milan.addNeighbour(istanbul);
+		istanbul.addNeighbour(milan);	
+		istanbul.addNeighbour(algers);
+		algers.addNeighbour(istanbul);
+		istanbul.addNeighbour(cairo);
+		cairo.addNeighbour(istanbul);
+		istanbul.addNeighbour(baghdad);
+		baghdad.addNeighbour(istanbul);
+		istanbul.addNeighbour(moscow);
+		moscow.addNeighbour(istanbul);		
+		cairo.addNeighbour(algers);
+		algers.addNeighbour(cairo);
+		cairo.addNeighbour(baghdad);
+		baghdad.addNeighbour(cairo);
+		cairo.addNeighbour(ryadh);
+		ryadh.addNeighbour(cairo);
+		cairo.addNeighbour(khartoum);
+		khartoum.addNeighbour(cairo);		
+		khartoum.addNeighbour(lagos);
+		lagos.addNeighbour(khartoum);
+		khartoum.addNeighbour(khinshasa);
+		khinshasa.addNeighbour(khartoum);
+		khartoum.addNeighbour(johannesburg);
+		johannesburg.addNeighbour(khartoum);		
+		khinshasa.addNeighbour(lagos);
+		lagos.addNeighbour(khinshasa);
+		khinshasa.addNeighbour(johannesburg);
+		johannesburg.addNeighbour(khinshasa);		
+		baghdad.addNeighbour(teheran);
+		teheran.addNeighbour(baghdad);
+		baghdad.addNeighbour(karachi);
+		karachi.addNeighbour(baghdad);
+		baghdad.addNeighbour(ryadh);
+		ryadh.addNeighbour(baghdad);		
+		teheran.addNeighbour(moscow);
+		moscow.addNeighbour(teheran);
+		teheran.addNeighbour(karachi);
+		karachi.addNeighbour(teheran);
+		teheran.addNeighbour(delhi);
+		delhi.addNeighbour(teheran);		
+		karachi.addNeighbour(ryadh);
+		ryadh.addNeighbour(karachi);
+		karachi.addNeighbour(delhi);
+		delhi.addNeighbour(karachi);
+		karachi.addNeighbour(mumbai);
+		mumbai.addNeighbour(karachi);		
+		delhi.addNeighbour(mumbai);
+		mumbai.addNeighbour(delhi);
+		delhi.addNeighbour(chennai);
+		chennai.addNeighbour(delhi);
+		delhi.addNeighbour(kolkata);
+		kolkata.addNeighbour(delhi);		
+		mumbai.addNeighbour(chennai);
+		chennai.addNeighbour(mumbai);		
+		chennai.addNeighbour(kolkata);
+		kolkata.addNeighbour(chennai);
+		chennai.addNeighbour(bangkok);
+		bangkok.addNeighbour(chennai);
+		chennai.addNeighbour(jakarta);
+		jakarta.addNeighbour(chennai);		
+		kolkata.addNeighbour(bangkok);
+		bangkok.addNeighbour(kolkata);
+		kolkata.addNeighbour(hongKong);
+		hongKong.addNeighbour(kolkata);		
+		bangkok.addNeighbour(jakarta);
+		jakarta.addNeighbour(bangkok);
+		bangkok.addNeighbour(hongKong);
+		hongKong.addNeighbour(bangkok);
+		bangkok.addNeighbour(hoChiMinhCity);
+		hoChiMinhCity.addNeighbour(bangkok);		
+		jakarta.addNeighbour(hoChiMinhCity);
+		hoChiMinhCity.addNeighbour(jakarta);
+		jakarta.addNeighbour(sydney);
+		sydney.addNeighbour(jakarta);		
+		hoChiMinhCity.addNeighbour(manila);
+		manila.addNeighbour(hoChiMinhCity);
+		hoChiMinhCity.addNeighbour(hongKong);
+		hongKong.addNeighbour(hoChiMinhCity);		
+		manila.addNeighbour(sydney);
+		sydney.addNeighbour(manila);
+		manila.addNeighbour(hongKong);
+		hongKong.addNeighbour(manila);
+		manila.addNeighbour(taipei);
+		taipei.addNeighbour(manila);		
+		hongKong.addNeighbour(taipei);
+		taipei.addNeighbour(hongKong);
+		hongKong.addNeighbour(shangai);
+		shangai.addNeighbour(hongKong);		
+		shangai.addNeighbour(taipei);
+		taipei.addNeighbour(shangai);
+		shangai.addNeighbour(beijing);
+		beijing.addNeighbour(shangai);
+		shangai.addNeighbour(seoul);
+		seoul.addNeighbour(shangai);
+		shangai.addNeighbour(tokyo);
+		tokyo.addNeighbour(shangai);	
+		taipei.addNeighbour(osaka);
+		osaka.addNeighbour(taipei);		
+		osaka.addNeighbour(tokyo);
+		tokyo.addNeighbour(osaka);		
+		tokyo.addNeighbour(seoul);
+		seoul.addNeighbour(tokyo);
+		seoul.addNeighbour(beijing);
+		beijing.addNeighbour(seoul);
 		
 		// Instantiate Reserve
 		logger.info("Building reserve.");
+		
+		characterReserve = new LinkedList<Character>();
+		//Create characters
+		for(int i = 0; i<4; i++) {
+			characterReserve.add(new Character("Player "+(i+1)));
+		}
+		//Create Cubes & research center	
+		cubeReserve = new HashMap<Desease, Set<Cube>>();
 		for(Desease desease : deseaseSet) {
 			HashSet<Cube> cubeSet = new HashSet<Cube>();
 			for(int i = 0; i<24 ; i++) {
@@ -282,29 +391,22 @@ public class GameProperties {
 			}
 			cubeReserve.put(desease,cubeSet);
 		}
+		researchCenterReserve = new HashSet<ResearchCenter>();
 		for(int i = 0; i<6 ; i++) {
 			researchCenterReserve.add(new ResearchCenter());
 		}
 		
 		//Create Cards
 		logger.info("Creating Cards");
-		for(City city : GameProperties.map.vertexSet()) {
+		propagationCardReserve = new HashSet<PropagationCard>();
+		playerCardReserve = new HashSet<PlayerCard>();
+		for(City city : map) {
 			//Create propagation card
 			propagationCardReserve.add(new PropagationCard(city));
 			playerCardReserve.add(new CityCard(city));
 			
 		}
-		for(int i = 0; i<10; i++) {
-			epidemicCardReserve.add(new EpidemicCard());
-		}
-		
-		
-		for(City city : GameProperties.map.vertexSet()) {
-			//Create propagation card
-			propagationCardReserve.add(new PropagationCard(city));
-			playerCardReserve.add(new CityCard(city));
-			
-		}
+		epidemicCardReserve = new EpidemicCard();
 		
 		//Instantiate action rules
 		actionTypeSet = new HashSet<Class<? extends GameAction>>();
@@ -316,11 +418,89 @@ public class GameProperties {
 		actionTypeSet.add(Cure.class);
 		actionTypeSet.add(Build.class);
 		actionTypeSet.add(ShareKnowledge.class);
+		actionTypeSet.add(Pass.class);
+		
+		//Instantiate default actions
+		buildAction = new Build();
+		passAction = new Pass();
+		treatAction = new HashMap<Desease, Treat>();
+		for(Desease desease : GameProperties.deseaseSet) {
+			treatAction.put(desease, new Treat(desease));
+		}
 		
 	}
 	
 	public static int getPropagationSpeed(int epidemicCounter) {
 		return propagationSpeed[epidemicCounter];
+	}
+	
+	public static int getActionWeight(GameStatus gameStatus, GameAction gameAction) {
+		if (gameAction.getClass().isAssignableFrom(Drive.class)) {
+			return (gameStatus.getCityCubeSet(((Drive)gameAction).getDestination(), ((Drive)gameAction).getDestination().getDesease()).size()) *10 +10;
+		} else if (gameAction.getClass().isAssignableFrom(DirectFlight.class)) {
+			return gameStatus.getCityCubeSet(((DirectFlight)gameAction).getDestination(), ((DirectFlight)gameAction).getDestination().getDesease()).size()*5 +1;
+		} else if (gameAction.getClass().isAssignableFrom(CharterFlight.class)) {
+			return gameStatus.getCityCubeSet(((CharterFlight)gameAction).getDestination(), ((CharterFlight)gameAction).getDestination().getDesease()).size()*5 +1;
+		} else if (gameAction.getClass().isAssignableFrom(ShuttleFlight.class)) {
+			return (gameStatus.getCityCubeSet(((ShuttleFlight)gameAction).getDestination(), ((ShuttleFlight)gameAction).getDestination().getDesease()).size()) *10+5;
+		} else if (gameAction.getClass().isAssignableFrom(Treat.class)) {
+			return gameStatus.getCityCubeSet(gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentCharacterPosition().getDesease()).size() * 200;
+		} else if (gameAction.getClass().isAssignableFrom(ShareKnowledge.class)) {
+			return 0;
+		} else if (gameAction.getClass().isAssignableFrom(Cure.class)) {
+			return 2000;
+		}  else if (gameAction.getClass().isAssignableFrom(Build.class)) {
+			return 20;
+		} else if (gameAction.getClass().isAssignableFrom(Pass.class)) {
+			return 0;
+		}
+		return 1;
+	}
+	
+	public static int getWeight(GameStatus gameStatus) {
+		int weight = 0;
+		weight += (maxEclosionCounter - gameStatus.getEclosionCounter()) * 500;
+		weight += 300*GameProperties.map.size();
+		for(City city : GameProperties.map) {
+			switch(gameStatus.getCityCubeSet(city, city.getDesease()).size()) {
+			case 0:
+				break;
+			case 1:
+				weight -=50;
+				break;
+			case 2:
+				weight -=100;
+				break;
+			case 3 :
+				weight -=200;
+				if(gameStatus.getPropagationDeck().isInMemory(city)) {
+					weight -=100;
+				}
+				break;
+			default: 
+				weight -=300;
+				break;
+			}
+		}
+		weight +=1000;
+		for(Desease desease : GameProperties.deseaseSet) {
+			weight -=Math.max(gameStatus.getCubeCurrentReserve(desease).size()*50,250);
+		}
+		weight += gameStatus.getCuredDeseaseSet().size()*1000;
+		weight += gameStatus.getEradicatedDeseaseSet().size()*250;
+		
+		for(Desease desease : GameProperties.deseaseSet) {
+			int max = 0;
+			if(!gameStatus.getCuredDeseaseSet().contains(desease)) {
+				for(Hand hand : gameStatus.getCharacterHandList()) {
+					int current = hand.getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(desease)).collect(Collectors.toSet()).size();
+					max = current>max ? current:max;
+				}
+			}
+			weight += 40*max;
+		}
+		gameStatus.value=weight;
+		return gameStatus.value;
 	}
 	
 }

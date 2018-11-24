@@ -5,35 +5,38 @@ import java.util.Set;
 
 import game.GameStatus;
 import objects.card.Card;
+import objects.card.PlayerCard;
+import util.GameUtil;
 
 public class Discard extends GameAction {
 	Card card;
 	objects.Character character;
 	
-	public Discard( objects.Character character, Card card) {
+	public Discard(objects.Character character, Card card) {
 		super();
 		this.actionCost=0;
-		this.character=character;
 		this.card=card;
+		this.character=character;
 	}
-	
+
 	@Override
 	public boolean perform(GameStatus gameStatus) {
-		if(isValid() && super.perform(gameStatus)) {
-			return character.getHand().discard(card);
+		if(isValid(gameStatus) && super.perform(gameStatus)) {
+			GameUtil.log(gameStatus, GameAction.logger, gameStatus.getCurrentPlayer().getName()+" discards "+ card.getTitle() +".");
+			return gameStatus.getCharacterHand(character).removeAndDiscard(card);
 		}
 		return false;
 	}
 	
-	public boolean isValid() {
-		return character.getHand().getCardDeck().contains(card);
+	public boolean isValid(GameStatus gameStatus) {
+		return gameStatus.getCharacterHand(character).getCardDeck().contains(card);
 	}
 
 	public static Set<GameAction> getValidGameActionSet(GameStatus gameStatus, objects.Character character) {
 		Set<GameAction> discardSet = new HashSet<GameAction>();
-		if(character.getHand().getCardDeck().size() > 7) {
-			for(Card card : character.getHand().getCardDeck()) {
-				discardSet.add(new Discard(character,card));
+		if(gameStatus.getCharacterHand(character).getCardDeck().size() > 7) {
+			for(Card card : gameStatus.getCharacterHand(character).getCardDeck()) {
+				discardSet.add(((PlayerCard)card).getCharacterDiscard(character));
 			}
 		}
 		return discardSet;

@@ -6,28 +6,40 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import game.action.Build;
+import game.action.CharterFlight;
+import game.action.DirectFlight;
+import game.action.Discard;
+import game.action.Drive;
+import game.action.ShareKnowledge;
+import game.action.ShuttleFlight;
 import util.GameUtil;
 
 public class City implements Serializable{
 	private String name;
 	private int population;
 	private Desease desease;
-	private ResearchCenter researchCenter;
-	private Set<Cube> cubeSet;
+	private Set<City> neighbourSet;
+
+	private Drive driveAction;
+	private Set<Drive> driveActionSet;
+	private CharterFlight charterFlightAction;
+	private DirectFlight directFlightAction;
+	private ShuttleFlight shuttleFlightAction;
+
+	
 	
 	public City(String name, Desease desease, int population) {
 		this.name = name;
 		this.desease = desease;
 		this.population = population;
-		this.cubeSet = new HashSet<Cube>();
-	}
-	
-	public City(String name, Desease desease, int population, ResearchCenter researchCenter) {
-		this.name = name;
-		this.desease = desease;
-		this.population = population;
-		this.cubeSet = new HashSet<Cube>();
-		this.setResearchCenter(researchCenter);
+		this.neighbourSet = new HashSet<City>();
+		
+		this.driveAction = new Drive(this);
+		this.driveActionSet = new HashSet<Drive>();
+		this.charterFlightAction = new CharterFlight(this);
+		this.directFlightAction = new DirectFlight(this);
+		this.shuttleFlightAction = new ShuttleFlight(this);
 	}
 
 	public String getName() {
@@ -38,47 +50,36 @@ public class City implements Serializable{
 		return desease;
 	}
 
-	public ResearchCenter getResearchCenter() {
-		return researchCenter;
-	}
-
-	public void setResearchCenter(ResearchCenter researchCenter) {
-		this.researchCenter = researchCenter;
-	}
-
 	public int getPopulation() {
 		return population;
 	}
 	
-	public Set<Cube> getCubeSet(Desease desease) {
-		return ((Stream<Cube>) cubeSet.stream().filter(GameUtil.getCubePredicate(desease))).collect(Collectors.toSet());
-	}
-
-	public void addCube(Cube cube) {
-		cubeSet.add(cube);
-	}
-
-	public boolean hasResearchCenter() {
-		return this.researchCenter != null;
-	}
-
-	public void removeCube(Cube cube) {
-		cubeSet.remove(cube);
+	public Drive getDriveAction() {
+		return this.driveAction;
 	}
 	
-	public void removeCube(Set<Cube> cubeSet2) {
-		cubeSet.removeAll(cubeSet2);	
+	public Set<Drive> getDriveActionSet() {
+		return this.driveActionSet;
 	}
-
-	public Set<Desease> getDeseaseSet() {
-		Set<Desease> deseaseSet = new HashSet<Desease>();
-		if(cubeSet!=null) {
-			for(Cube cube : cubeSet) {
-				deseaseSet.add(cube.getDesease());
-			}
-		}
-		return deseaseSet;
-	}
-
 	
+	public CharterFlight getCharterFlightAction() {
+		return this.charterFlightAction;
+	}
+	
+	public DirectFlight getDirectFlightAction() {
+		return this.directFlightAction;
+	}
+	
+	public ShuttleFlight getShuttleFlightAction() {
+		return this.shuttleFlightAction;
+	}
+	
+	public void addNeighbour(City city) {
+		this.neighbourSet.add(city);
+		this.driveActionSet.add(new Drive(city));
+	}
+	
+	public Set<City> getNeighbourSet() {
+		return this.neighbourSet;
+	}
 }

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.mcts.MCTSNode;
 import ai.mcts.MonteCarloTreeSearch;
-import game.GameRules.GameStep;
+import game.action.Build;
 import game.action.GameAction;
 
 public class AIPlayer extends Player {
@@ -18,11 +18,13 @@ public class AIPlayer extends Player {
 	List<GameAction> currentActionList;
 	int timeLimit;
 	int shortTimeLimit;
+	MonteCarloTreeSearch mcts;
 	
 	public AIPlayer(GameStatus gameStatus, int timeLimit, int shortTimeLimit) {
 		super(gameStatus);
 		this.timeLimit = timeLimit;
 		this.shortTimeLimit = shortTimeLimit;
+		mcts = new MonteCarloTreeSearch(gameStatus, shortTimeLimit, new RolloutPlayer(gameStatus));
 	}
 	
 	@Override
@@ -41,14 +43,13 @@ public class AIPlayer extends Player {
 	}
 	
 	private void discard() {
-		MCTSNode<GameStatus> node = new MonteCarloTreeSearch(gameStatus, shortTimeLimit).run();
-		currentActionList = node.getActionList();
-		if(currentActionList.size() > 0) {
-			GameAction gameAction = currentActionList.get(0);
-			currentActionList.remove(gameAction);
+		mcts.setLimit(shortTimeLimit);
+		mcts.setRoot(gameStatus);
+		MCTSNode node = mcts.run();
+		for(GameAction gameAction : node.getGameStatus().previousActionList) {
 			gameAction.perform(gameStatus);
-			
-		}	
+		}
+		mcts.setLimit(timeLimit);
 	}
 	
 	private void event() {
@@ -56,14 +57,10 @@ public class AIPlayer extends Player {
 	}
 	
 	private void action() {
-		logger.info("Looking for action, turn : "+gameStatus.getTurnCounter()+" steps = "+gameStatus.getGameStep());
-		MCTSNode<GameStatus> node = new MonteCarloTreeSearch(gameStatus, timeLimit).run();
-		currentActionList = node.getActionList();
-		if(currentActionList.size() > 0) {
-			GameAction gameAction = currentActionList.get(0);
-			currentActionList.remove(gameAction);
+		mcts.setRoot(gameStatus);
+		MCTSNode node = mcts.run();	
+		for(GameAction gameAction : node.getGameStatus().previousActionList) {
 			gameAction.perform(gameStatus);
-			
 		}
 	}
 }

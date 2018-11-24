@@ -14,11 +14,7 @@ City destination;
 		this.destination=destination;
 	}
 
-	public boolean isValid() {
-		return false;
-	}
-
-	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
-		return new HashSet<MoveAction>();
+	public City getDestination() {
+		return this.destination;
 	}
 }
