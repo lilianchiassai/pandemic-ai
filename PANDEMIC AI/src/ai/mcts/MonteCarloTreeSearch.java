@@ -3,6 +3,7 @@ package ai.mcts;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +11,11 @@ import org.apache.logging.log4j.Logger;
 import game.GameEngine;
 import game.GameProperties;
 import game.GameRules;
+import game.GameRules.GameStep;
 import game.GameStatus;
 import game.RolloutPlayer;
 import game.action.GameAction;
+import game.action.superaction.SuperAction;
 
 public class MonteCarloTreeSearch {
 	
@@ -71,28 +74,44 @@ public class MonteCarloTreeSearch {
 		return gameEngine.run();
 	}
 	
-	public GameAction rolloutPolicy(GameStatus gameStatus) {
+	public void rolloutPolicy(GameStatus gameStatus) {
 		//Get all possible actions
-		weightedActionMap.clear();
-		List<GameAction> actionList = GameRules.getAllPossibleActions(gameStatus);
-		
-		if(actionList.size()>0) {
-			
-			
-			for(int i = 0; i<actionList.size(); i++) {
-				int weight = GameProperties.getActionWeight(gameStatus, actionList.get(i));
-				for(int k = 0; k<weight; k++) {
-					weightedActionMap.add(i);
-				}
+		//weightedActionMap.clear();
+		//gameStatus.previousActionList.clear();
+		//gameStatus.updateValue();
+		//List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus.value, gameStatus, gameStatus.getGameStep()==GameStep.play);
+		List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActions(gameStatus, gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentActionCount());
+		/*for(List<SuperAction> superActionList : superActionListSet) {
+			GameStatus clone = gameStatus.clone();
+			for(SuperAction superAction : superActionList) {
+				superAction.perform(clone);
 			}
-			//Pick one at random
-			int random = (int) (Math.random() *weightedActionMap.size()*10/10);
-			//Perform
-			GameAction gameAction = actionList.get(weightedActionMap.get(random));
-
-			return gameAction;
-		} else {
-			return null;
+		}*/
+		int random = (int) (Math.random() *superActionListSet.size()*10/10);
+		for(SuperAction superAction : superActionListSet.get(random)) {
+			superAction.perform(gameStatus);
+		}
+	}
+	
+	public void rolloutPolicyRandom(GameStatus gameStatus) {
+		//Get all possible actions
+		while(GameRules.canPlay(gameStatus)|| GameRules.mustDiscard(gameStatus)) {
+			weightedActionMap.clear();
+			List<GameAction> actionList = GameRules.getAllPossibleActions(gameStatus);
+			
+			if(actionList.size()>0) {
+				for(int i = 0; i<actionList.size(); i++) {
+					int weight = GameProperties.getActionWeight(gameStatus, actionList.get(i));
+					for(int k = 0; k<weight; k++) {
+						weightedActionMap.add(i);
+					}
+				}
+				//Pick one at random
+				int random = (int) (Math.random() *weightedActionMap.size()*10/10);
+				//Perform
+				GameAction gameAction = actionList.get(weightedActionMap.get(random));
+				gameAction.perform(gameStatus);
+			} 
 		}
 	}
 	

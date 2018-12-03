@@ -5,6 +5,7 @@ import java.util.Set;
 
 import game.GameProperties;
 import game.GameStatus;
+import game.LightGameStatus;
 import objects.City;
 import objects.card.CityCard;
 import util.GameUtil;
@@ -12,8 +13,8 @@ import util.GameUtil;
 public class CharterFlight extends MoveAction {
 	
 	
-	public CharterFlight(City destination) {
-		super(destination);
+	public CharterFlight(City origin, City destination) {
+		super(origin, destination);
 	}
 	
 	@Override
@@ -27,14 +28,24 @@ public class CharterFlight extends MoveAction {
 		return false;
 	}
 	
+	public void perform(LightGameStatus lightGameStatus) {
+		lightGameStatus.hand.remove(lightGameStatus.position.getCityCard());
+		lightGameStatus.position = destination;
+	}
 
-	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
-		Set<MoveAction> charterFlightSet = new HashSet<MoveAction>();
-		if(gameStatus.getCurrentHand().getCityCard(gameStatus.getCurrentCharacterPosition()) != null) {
-			for(City city : GameProperties.map) {
-				charterFlightSet.add(city.getCharterFlightAction());
-			}
+	public boolean cancel(GameStatus gameStatus) {
+		if(super.cancel(gameStatus)) {
+			gameStatus.getCurrentHand().drawBack(gameStatus, origin.getCityCard());
+			gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), origin);
 		}
-		return charterFlightSet;
+		return true;
+	}
+	
+	public static Set<CharterFlight> getValidGameActionSet(GameStatus gameStatus) {
+		HashSet<CharterFlight> resultSet = new HashSet<CharterFlight>();
+		if(gameStatus.getCurrentHand().getCityCard(gameStatus.getCurrentCharacterPosition()) != null) {
+				resultSet.addAll(gameStatus.getCurrentCharacterPosition().getCharterFlightActionSet());
+		}
+		return resultSet;
 	}
 }

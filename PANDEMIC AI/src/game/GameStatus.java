@@ -10,6 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +30,7 @@ import objects.card.PlayerCard;
 import objects.card.PlayerDeck;
 import objects.card.PropagationCard;
 import objects.card.PropagationDeck;
+import util.GameUtil;
 
 public class GameStatus implements Serializable {
 
@@ -71,7 +74,7 @@ public class GameStatus implements Serializable {
 		simulation = false;
 		this.actionList = new LinkedList<GameAction>();
 		this.previousActionList = new LinkedList<GameAction>();
-		this.value=0;
+		
 		//Rules material
 		this.alreadyEcloded = new HashSet<City>();
 		
@@ -161,7 +164,7 @@ public class GameStatus implements Serializable {
 				propagationDeck.discard(card);
 			}
 		}
-		
+		updateValue();
 	}
 	
 	//Getters
@@ -276,7 +279,16 @@ public class GameStatus implements Serializable {
 		} else {
 			return false;
 		}
-		
+	}
+	
+	public boolean addToReserve(Object obj) {
+		if(obj instanceof ResearchCenter) {
+			return researchCenterCurrentReserve.add((ResearchCenter) obj);
+		} else if(obj instanceof Cube) {
+			return cubeCurrentReserve.get(((Cube)obj).getDesease()).add((Cube)obj);
+		} else {
+			return false;
+		}
 	}
 	
 	public boolean addResearchCenter(City city) {
@@ -285,6 +297,16 @@ public class GameStatus implements Serializable {
 			ResearchCenter researchCenter = it.next();
 			removeFromReserve(researchCenter);
 			cityResearchCenterMap.put(city, researchCenter);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean removeResearchCenter(City city) {
+		if(cityResearchCenterMap.get(city) != null) {
+			addToReserve(cityResearchCenterMap.get(city));
+			cityResearchCenterMap.remove(city);
 			return true;
 		} else {
 			return false;
@@ -374,6 +396,11 @@ public class GameStatus implements Serializable {
 	public boolean addCuredDesease(Desease desease) {
 		return this.curedDeseaseSet.add(desease);
 	}
+	
+
+	public boolean removeCuredDesease(Desease desease) {
+		return this.curedDeseaseSet.remove(desease);
+	}
 
 	public boolean isCubeReserveFull(Desease desease) {
 		return this.cubeCurrentReserve.get(desease).size() == GameProperties.cubeReserve.get(desease).size();
@@ -388,6 +415,11 @@ public class GameStatus implements Serializable {
 	public boolean addEradicatedDesease(Desease desease) {
 		return this.eradicatedDeseaseSet.add(desease);
 	}
+	
+	public boolean removeEradicatedDesease(Desease desease) {
+		return this.eradicatedDeseaseSet.remove(desease);
+	}
+
 
 	public int getCurrentActionCount() {
 		return this.currentActionCount;
@@ -397,11 +429,16 @@ public class GameStatus implements Serializable {
 		this.currentActionCount = currentActionCount - i;
 	}
 	
+	public void increaseCurrentActionCount(int actionCost) {
+		this.currentActionCount += actionCost;
+	}
+	
 	public GameStatus clone() {
 		GameStatus gameStatus = new GameStatus();
 		gameStatus.simulation = true;
 		gameStatus.actionList = new LinkedList<GameAction>(this.actionList);
 		gameStatus.previousActionList = new LinkedList<GameAction>(this.previousActionList);
+		gameStatus.value= this.value;
 		
 		gameStatus.alreadyEcloded = new HashSet<City>();
 		gameStatus.turnCounter = this.turnCounter;
@@ -458,6 +495,10 @@ public class GameStatus implements Serializable {
 		gameStatus.eradicatedDeseaseSet.addAll(this.eradicatedDeseaseSet);
 		return gameStatus;
 	}
+	
+	public LightGameStatus lightClone() {
+		return new LightGameStatus(this);
+	}
 
 	public boolean isSimulation() {
 		return this.simulation;
@@ -494,4 +535,125 @@ public class GameStatus implements Serializable {
 	public Set<ResearchCenter> getResearchCenterCurrentReserve() {
 		return this.researchCenterCurrentReserve;
 	}
+	
+	public int updateValue() {
+		this.value = 0;
+		this.value += (GameProperties.maxEclosionCounter - this.getEclosionCounter()) * 500;
+		this.value += 300*GameProperties.map.size();
+		for(Card propagationCard : this.propagationDeck.getDiscardPile().getCardDeck()) {
+			switch(this.getCityCubeSet(((PropagationCard)propagationCard).getCity(), ((PropagationCard)propagationCard).getCity().getDesease()).size()) {
+			case 0:
+				break;
+			case 1:
+				this.value -=40;
+				break;
+			case 2:
+				this.value -=80;
+				break;
+			case 3 :
+				this.value -=160;
+				break;
+			default: 
+				this.value -=300;
+				break;
+			}
+		}
+		
+		for(LinkedList<PropagationCard> memory : this.propagationDeck.getMemories()) {
+			for(PropagationCard memoryCard : memory) {
+				switch(this.getCityCubeSet(((PropagationCard)memoryCard).getCity(), ((PropagationCard)memoryCard).getCity().getDesease()).size()) {
+				case 0:
+					break;
+				case 1:
+					this.value -=50;
+					break;
+				case 2:
+					this.value -=100;
+					break;
+				case 3 :
+					this.value -=300;
+					break;
+				default: 
+					this.value -=300;
+					break;
+				}
+			}
+		}
+		
+		this.value +=1000;
+		for(Desease desease : GameProperties.deseaseSet) {
+			this.value -=Math.max(this.getCubeCurrentReserve(desease).size()*50,250);
+		}
+		this.value +=1000;
+		int neighbourResearchCenter = 0;
+		for(City city : GameProperties.map) {
+			if(this.cityResearchCenterMap.get(city) != null) {
+				neighbourResearchCenter = 0;
+				for(City neighbour : city.getNeighbourSet()) {
+					if(this.cityResearchCenterMap.get(city) != null) {
+						neighbourResearchCenter++;
+					}
+				}
+				this.value+=200/(neighbourResearchCenter+1);
+			}
+		}
+		this.value -=this.getResearchCenterCurrentReserve().size()*200;
+		
+		this.value += this.getCuredDeseaseSet().size()*1000;
+		this.value += this.getEradicatedDeseaseSet().size()*250;
+		
+		for(Desease desease : GameProperties.deseaseSet) {
+			int max = 0;
+			if(!this.getCuredDeseaseSet().contains(desease)) {
+				for(Hand hand : this.getCharacterHandList()) {
+					int current = hand.getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(desease)).collect(Collectors.toSet()).size();
+					max = current>max ? current:max;
+				}
+			}
+			this.value += 300*max;
+		}
+		this.value+= this.getCurrentCharacterPositionValue()*10/10;
+		return this.value;
+	}
+
+	private double getCurrentCharacterPositionValue() {
+		double value =0;
+		for(City city : this.getCurrentCharacterPosition().getNeighbourSet()) {
+			if(this.getCityCubeSet(city, city.getDesease()).size()>0) {
+				value++;
+			} else {
+				for(City neighbour : city.getNeighbourSet()) {
+					if(this.getCityCubeSet(neighbour, neighbour.getDesease()).size()>0) {
+						value+=0.5;
+					} else {
+						for(City neighbour2 : neighbour.getNeighbourSet()) {
+							if(this.getCityCubeSet(neighbour, neighbour.getDesease()).size()>0) {
+								value+=0.2;
+							}
+						}
+					}
+				}
+			}
+			
+		}
+		return 0;
+	}
+
+	public void addToActionList(GameAction gameAction) {
+		this.previousActionList.add(gameAction);
+	}
+
+	public boolean removeFromActionList(GameAction gameAction) {
+		if(this.previousActionList.getLast() == gameAction) {
+			return this.previousActionList.removeLast() != null;
+		}
+		return false;
+	}
+
+	public boolean rollBack() {
+		return this.previousActionList.getLast().cancel(this);
+	}
+	
+
+
 }

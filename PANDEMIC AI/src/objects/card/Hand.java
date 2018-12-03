@@ -17,7 +17,7 @@ public class Hand extends Deck {
 	objects.Character character;
 	
 	public Hand(Character character) {
-		super(PlayerCard.class);
+		super(PlayerCard.class, new LinkedList<Card>(), new Deck(PlayerCard.class,new LinkedList<Card>(), null));
 		this.character = character;
 	}
 	
@@ -38,19 +38,25 @@ public class Hand extends Deck {
 		}
 		return null;
 	}
-
-	public void removeCard(CityCard card) {
-		cardDeck.remove(card);
-	}
 	
 	public void removeAnddiscard(GameStatus gameStatus, PlayerCard card) {
 		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(card);
 		this.cardDeck.remove(card);
 	}
 	
+	public void drawBack(GameStatus gameStatus, PlayerCard card) {
+		gameStatus.getPlayerDeck().getDiscardPile().removeCard(card);
+		addOnTop(card);
+	}
+	
 	public void removeAndDiscard(GameStatus gameStatus, Set<Card> cardSetDesease) {
 		this.cardDeck.removeAll(cardSetDesease);
 		gameStatus.getPlayerDeck().getDiscardPile().addOnTop(cardSetDesease);
+	}
+	
+	public void drawBack(GameStatus gameStatus, Set<Card> cardSet) {
+		gameStatus.getPlayerDeck().getDiscardPile().removeAll(cardSet);
+		this.cardDeck.addAll(cardSet);
 	}
 	
 	public String toString() {
@@ -70,7 +76,9 @@ public class Hand extends Deck {
 		clone.cardDeck.addAll(this.cardDeck);
 		Collections.shuffle(clone.cardDeck);
 		
-		clone.discardPile = this.discardPile != null ? this.discardPile.clone() : null;
+		clone.discardPile = new Deck(PlayerCard.class,new LinkedList<Card>(), null);
 		return clone;
 	}
+
+	
 }

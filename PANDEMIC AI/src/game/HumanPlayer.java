@@ -7,16 +7,11 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import game.action.Build;
-import game.action.CharterFlight;
 import game.action.Cure;
-import game.action.DirectFlight;
 import game.action.Discard;
-import game.action.Drive;
 import game.action.GameAction;
+import game.action.GiveKnowledge;
 import game.action.Pass;
-import game.action.ShareKnowledge;
-import game.action.ShuttleFlight;
 import game.action.Treat;
 import objects.Character;
 import objects.City;
@@ -88,23 +83,23 @@ public class HumanPlayer extends Player {
 		} else if(str.startsWith("directFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = city.getDirectFlightAction();
+			gameAction = gameStatus.getCurrentCharacterPosition().getDirectFlightAction(city);
 		} else if(str.startsWith("charterFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = city.getCharterFlightAction();
+			gameAction = gameStatus.getCurrentCharacterPosition().getCharterFlightAction(city);
 		} else if(str.startsWith("shuttleFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = city.getShuttleFlightAction();
+			gameAction = gameStatus.getCurrentCharacterPosition().getShuttleFlightAction(city);
 		} else if (str.startsWith("treat")) {
 			String deseaseName = str.split("-")[1];
 			Desease desease = GameUtil.getDesease(deseaseName);
-			gameAction = new Treat(desease);
-		} else if (str.startsWith("shareKnowledge")) {
+			gameAction = new Treat(desease, GameRules.isCured(gameStatus, desease) ? gameStatus.getCityCubeSet(gameStatus.getCurrentCharacterPosition(), desease).size() : 1);
+		} else if (str.startsWith("giveKnowledge")) {
 			String playerName = str.split("-")[1];
 			Character otherPlayer = GameUtil.getPlayer(playerName);
-			gameAction = new ShareKnowledge(otherPlayer);
+			gameAction = new GiveKnowledge(otherPlayer);
 		} else if (str.startsWith("cure")) {
 			String deseaseName = str.split("-")[1];
 			Desease desease = GameUtil.getDesease(deseaseName);
@@ -117,7 +112,7 @@ public class HumanPlayer extends Player {
 		} else if (str.startsWith("build")) {
 			gameAction = GameProperties.buildAction;
 		} else if (str.startsWith("pass")) {
-			gameAction = new Pass();
+			gameAction = new Pass(gameStatus.getCurrentActionCount());
 		} else {
 			logger.info("Wrong action please try again");
 		}

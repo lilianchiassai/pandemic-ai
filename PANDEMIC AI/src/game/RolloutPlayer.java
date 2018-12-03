@@ -1,14 +1,17 @@
 package game;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ai.mcts.MCTSNode;
 import ai.mcts.MonteCarloTreeSearch;
 import game.action.GameAction;
+import game.action.superaction.SuperAction;
+import util.GameUtil;
 
 public class RolloutPlayer extends Player {
 private static Logger logger = LogManager.getLogger(AIPlayer.class.getName());
@@ -36,8 +39,16 @@ private static Logger logger = LogManager.getLogger(AIPlayer.class.getName());
 	}
 	
 	private void discard() {
-		GameAction action = mcts.rolloutPolicy(gameStatus);
-		action.perform(gameStatus);
+		mcts.rolloutPolicyRandom(gameStatus);
+		//GameStatus save = gameStatus.clone();
+		/*for(GameAction action : actionList) {
+			action.perform(gameStatus);
+		}*/
+		/*save.updateValue();
+		gameStatus.updateValue();
+		if(gameStatus.value<=save.value) {
+			gameStatus = save.clone();
+		}*/
 	}
 	
 	private void event() {
@@ -45,8 +56,16 @@ private static Logger logger = LogManager.getLogger(AIPlayer.class.getName());
 	}
 	
 	private void action() {
-		GameAction action = mcts.rolloutPolicy(gameStatus);
-		action.perform(gameStatus);
+		mcts.rolloutPolicy(gameStatus);
+		//GameStatus save = gameStatus.clone();
+		/*for(GameAction action : actionList) {
+			action.perform(gameStatus);
+		}*/
+		/*save.updateValue();
+		gameStatus.updateValue();
+		if(gameStatus.value<=save.value) {
+			gameStatus = save.clone();
+		}*/
 	}
 
 	public void setGameStatus(GameStatus clone) {

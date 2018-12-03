@@ -7,7 +7,7 @@ import objects.City;
 
 public class PropagationDeck extends Deck {
 
-	LinkedList<LinkedList<PropagationCard>> memories;
+	public LinkedList<LinkedList<PropagationCard>> memories;
 	Card draw;
 	
 	public PropagationDeck() {
@@ -61,5 +61,9 @@ public class PropagationDeck extends Deck {
 			}
 		}
 		return false;
+	}
+	
+	public LinkedList<LinkedList<PropagationCard>> getMemories() {
+		return this.memories;
 	}
 }

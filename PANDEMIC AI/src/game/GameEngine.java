@@ -24,8 +24,8 @@ public class GameEngine extends Observable{
 	public static void main(String[] args) {
 		//Starting game
 		gameProperties = new GameProperties();
-		GameStatus gameStatus = new GameStatus(2,4, GameUtil.getCity("Atlanta"));
-		GameEngine gameEngine = new GameEngine(gameStatus, new AIPlayer(gameStatus,1000,200));
+		GameStatus gameStatus = new GameStatus(2,3, GameUtil.getCity("Atlanta"));
+		GameEngine gameEngine = new GameEngine(gameStatus, new AIPlayer(gameStatus,3000,200));
 		gameEngine.run();
 		if(gameStatus.isWin()) {
 			logger.info("GG");

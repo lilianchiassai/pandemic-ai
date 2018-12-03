@@ -1,5 +1,6 @@
 package game;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 
@@ -8,8 +9,8 @@ import org.apache.logging.log4j.Logger;
 
 import ai.mcts.MCTSNode;
 import ai.mcts.MonteCarloTreeSearch;
-import game.action.Build;
 import game.action.GameAction;
+import game.action.superaction.SuperAction;
 
 public class AIPlayer extends Player {
 
@@ -24,7 +25,7 @@ public class AIPlayer extends Player {
 		super(gameStatus);
 		this.timeLimit = timeLimit;
 		this.shortTimeLimit = shortTimeLimit;
-		mcts = new MonteCarloTreeSearch(gameStatus, shortTimeLimit, new RolloutPlayer(gameStatus));
+		mcts = new MonteCarloTreeSearch(gameStatus, timeLimit, new RolloutPlayer(gameStatus));
 	}
 	
 	@Override
@@ -59,7 +60,7 @@ public class AIPlayer extends Player {
 	private void action() {
 		mcts.setRoot(gameStatus);
 		MCTSNode node = mcts.run();	
-		for(GameAction gameAction : node.getGameStatus().previousActionList) {
+		for(SuperAction gameAction : node.previousSuperActionList) {
 			gameAction.perform(gameStatus);
 		}
 	}

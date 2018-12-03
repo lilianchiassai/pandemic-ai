@@ -117,6 +117,10 @@ public class Deck {
 		return this.cardDeck;
 	}
 	
+	public void removeCard(Card card) {
+		cardDeck.remove(card);
+	}
+	
 	public Card getCard(String title) {
 		Set<Card> cardSet = (Set<Card>) cardDeck.stream().filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
 		if(cardSet != null) {
@@ -136,6 +140,10 @@ public class Deck {
 		
 		clone.discardPile = this.discardPile != null ? this.discardPile.clone() : null;
 		return clone;
+	}
+
+	public void removeAll(Set<Card> cardSet) {
+		this.cardDeck.removeAll(cardSet);
 	}
 
 

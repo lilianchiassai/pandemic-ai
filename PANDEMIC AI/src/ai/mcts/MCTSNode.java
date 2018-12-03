@@ -6,13 +6,16 @@ import java.util.List;
 import game.GameProperties;
 import game.GameRules;
 import game.GameStatus;
+import game.GameRules.GameStep;
 import game.action.GameAction;
+import game.action.superaction.SuperAction;
 
 public class MCTSNode {
 	public GameStatus gameStatus;
     private MCTSNode parent;
     private List<MCTSNode> unvisitedChildren;
     private List<MCTSNode> visitedChildren;
+    public List<SuperAction> previousSuperActionList;
 	
     boolean fullyExpanded;
     boolean expanded;
@@ -95,12 +98,26 @@ public class MCTSNode {
 		}
 		
 		this.expanded=true;
-		List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus);
-		for(GameStatus gameStatus : gameStatusSet) {
-			MCTSNode node = new MCTSNode(gameStatus, this);
-			GameProperties.getWeight(gameStatus);
-			this.addChild(node);
+		if(gameStatus.getGameStep() == GameStep.discard) {
+			List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus.value, gameStatus, gameStatus.getGameStep()==GameStep.play);
+			
+			for(GameStatus gameStatus : gameStatusSet) {
+				MCTSNode node = new MCTSNode(gameStatus, this);
+				this.addChild(node);
+			}
+		} else {
+			List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActions(gameStatus, gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentActionCount());
+			for(List<SuperAction> superActionList : superActionListSet) {
+				GameStatus clone = gameStatus.clone();
+				for(SuperAction superAction : superActionList) {
+					superAction.perform(clone);
+				}
+				MCTSNode node = new MCTSNode(clone, this);
+				node.previousSuperActionList = superActionList;
+				this.addChild(node);
+			}
 		}
+		
 		return false;
 	}
 
@@ -109,7 +126,7 @@ public class MCTSNode {
 	}
 
 	public double getUCT() {
-		return (gameStatus.value - this.getParent().getGameStatus().value) * (this.getVictoryCount()/this.getVisitCount() + 2*Math.sqrt(Math.log(this.getParent().getVisitCount())/this.getVisitCount()));
+		return  (this.getVictoryCount()/this.getVisitCount() + 2*Math.sqrt(Math.log(this.getParent().getVisitCount())/this.getVisitCount()));
 
 		//return GameProperties.getActionWeight(gameStatus, gameAction) * (this.getVictoryCount()/this.getVisitCount() + 2*Math.sqrt(Math.log(this.getParent().getVisitCount())/this.getVisitCount()));
 	}

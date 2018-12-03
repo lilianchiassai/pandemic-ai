@@ -18,7 +18,7 @@ public class CityCard extends PlayerCard{
 	
 	public CityCard(City city) {
 		this.city = city;
-		
+		city.setCityCard(this);
 	}
 
 	public City getCity() {

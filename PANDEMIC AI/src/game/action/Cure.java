@@ -8,23 +8,26 @@ import java.util.stream.Collectors;
 import game.GameProperties;
 import game.GameRules;
 import game.GameStatus;
+import game.LightGameStatus;
 import objects.Desease;
 import objects.card.Card;
+import objects.card.CityCard;
+import objects.card.PlayerCard;
 import util.GameUtil;
 
 public class Cure extends GameAction {
 	Desease desease;
-	Set<Card> set;
+	private Set<Card> set;
 	
 	public Cure(Desease desease, Set<Card> set) {
 		super();
 		this.desease=desease;
-		this.set=set;
+		this.setSet(set);
 	}
 	
 	public boolean perform(GameStatus gameStatus) {
 		if(!GameRules.isCured(gameStatus, desease) && gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition())) {
-			Set<Card> cardSetDesease = set.stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(desease)).collect(Collectors.toSet());
+			Set<Card> cardSetDesease = getSet().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(desease)).collect(Collectors.toSet());
 			if(cardSetDesease != null && cardSetDesease.size()==5 && super.perform(gameStatus)) {
 				gameStatus.getCurrentHand().removeAndDiscard(gameStatus, cardSetDesease);
 				GameUtil.log(gameStatus, GameAction.logger, gameStatus.getCurrentPlayer().getName()+" finds a Cure in "+gameStatus.getCurrentCharacterPosition().getName()+" for the "+desease.getName()+" desease.");
@@ -32,6 +35,20 @@ public class Cure extends GameAction {
 			}
 		}
 		return false;
+	}
+	
+	public void perform(LightGameStatus lightGameStatus) {
+		lightGameStatus.hand.removeAll(this.set);
+		lightGameStatus.curedDeseaseSet.add(this.desease);
+		lightGameStatus.actionCount-=this.actionCost;
+	}
+	
+	public boolean cancel(GameStatus gameStatus) {
+		if(super.cancel(gameStatus)) {
+			gameStatus.getCurrentHand().drawBack(gameStatus, this.getSet());
+			GameRules.cancelCure(gameStatus, desease);
+		}
+		return true;
 	}
 
 	public static Set<Cure> getValidGameActionSet(GameStatus gameStatus) {
@@ -52,7 +69,7 @@ public class Cure extends GameAction {
 		return cureSet;
 	}
 	
-	private static Set<Set<Card>> getCombinations(Set set, int combinationSize) {
+	public static Set<Set<Card>> getCombinations(Set set, int combinationSize) {
 		if(combinationSize == 1) {
 			Set<Set<Card>> resultSet = new HashSet<Set<Card>>();
 			for(Object o : set) {
@@ -74,5 +91,13 @@ public class Cure extends GameAction {
 			}
 			return result;
 		}
+	}
+
+	public Set<Card> getSet() {
+		return set;
+	}
+
+	public void setSet(Set<Card> set) {
+		this.set = set;
 	}
 }

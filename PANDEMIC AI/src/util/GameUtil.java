@@ -1,9 +1,5 @@
 package util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -123,26 +119,6 @@ public class GameUtil {
 		}
 		return null;
 	}
-	
-	public static <T> T deepCopy(T object) throws Exception
-    {
-        //Serialization of object
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        out.writeObject(object);
- 
-        //De-serialization of object
-        ByteArrayInputStream bis = new   ByteArrayInputStream(bos.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bis);
-        T copied = (T) in.readObject();
- 
-        //Verify that object is not corrupt
- 
-        //validateNameParts(fName);
-        //validateNameParts(lName);
- 
-        return copied;
-    }
 
 	public static Card getCard(String title) {
 		Set<PlayerCard> cardSet = (Set<PlayerCard>) GameProperties.playerCardReserve.stream().filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
@@ -154,5 +130,6 @@ public class GameUtil {
 		}
 		return null;
 	}
+	
 	
 }

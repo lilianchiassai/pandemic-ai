@@ -1,8 +1,10 @@
 package game;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -15,9 +17,12 @@ import game.action.Build;
 import game.action.CharterFlight;
 import game.action.Cure;
 import game.action.DirectFlight;
+import game.action.Discard;
 import game.action.Drive;
 import game.action.GameAction;
+import game.action.GiveKnowledge;
 import game.action.Pass;
+import game.action.ReceiveKnowledge;
 import game.action.ShareKnowledge;
 import game.action.ShuttleFlight;
 import game.action.Treat;
@@ -40,8 +45,9 @@ public class GameProperties {
 	
 	public static Set<Class<? extends GameAction>> actionTypeSet;
 	public static Build buildAction;
-	public static Pass passAction;
-	public static Map<Desease,Treat> treatAction;
+	public static List<Pass> passActionList;
+	public static Map<Desease,List<Treat>> treatAction;
+	public static Map<Desease,List<Treat>> treatCuredAction;
 	
 	static int maxEclosionCounter;	
 	public static int actionCount;
@@ -49,7 +55,7 @@ public class GameProperties {
 	public static Set<Desease> deseaseSet;
 	public static Set<City> map;
 	static Map<Desease, Set<Cube>> cubeReserve;
-	static Set<ResearchCenter> researchCenterReserve;
+	public static Set<ResearchCenter> researchCenterReserve;
 	public static Set<PlayerCard> playerCardReserve;
 	static Set<PropagationCard> propagationCardReserve;
 	public static EpidemicCard epidemicCardReserve;
@@ -186,6 +192,10 @@ public class GameProperties {
 		map.add(taipei);
 		map.add(manila);
 		map.add(sydney);
+		
+		for(City city : map) {
+			city.initGameActions(map);
+		}
 		
 		sanFrancisco.addNeighbour(losAngeles);
 		losAngeles.addNeighbour(sanFrancisco);
@@ -374,6 +384,12 @@ public class GameProperties {
 		seoul.addNeighbour(beijing);
 		beijing.addNeighbour(seoul);
 		
+		
+		//Init distances
+		for(City city : map) {
+			city.initDistances(map);
+		}
+		
 		// Instantiate Reserve
 		logger.info("Building reserve.");
 		
@@ -422,10 +438,21 @@ public class GameProperties {
 		
 		//Instantiate default actions
 		buildAction = new Build();
-		passAction = new Pass();
-		treatAction = new HashMap<Desease, Treat>();
+		passActionList = new ArrayList<Pass>();
+		for(int i = 0; i<=actionCount; i++) {
+			passActionList.add(new Pass(i));
+		}
+		treatAction = new HashMap<Desease, List<Treat>>();
+		treatCuredAction = new HashMap<Desease, List<Treat>>();
 		for(Desease desease : GameProperties.deseaseSet) {
-			treatAction.put(desease, new Treat(desease));
+			List treatActionList = new ArrayList<GameAction>();
+			List treatCuredActionList = new ArrayList<GameAction>();
+			for(int strength = 1; strength<=3;strength++) {
+				treatActionList.add(new Treat(desease, strength,strength));
+				treatCuredActionList.add(new Treat(desease, strength));
+			}
+			treatAction.put(desease, treatActionList);
+			treatCuredAction.put(desease, treatActionList);
 		}
 		
 	}
@@ -446,61 +473,64 @@ public class GameProperties {
 		} else if (gameAction.getClass().isAssignableFrom(Treat.class)) {
 			return gameStatus.getCityCubeSet(gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentCharacterPosition().getDesease()).size() * 200;
 		} else if (gameAction.getClass().isAssignableFrom(ShareKnowledge.class)) {
+			if(gameStatus.getCuredDeseaseSet().contains(gameStatus.getCurrentCharacterPosition().getDesease())) {
+				return 0;
+			} else {
+				int current = gameStatus.getCurrentHand().getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(gameStatus.getCurrentCharacterPosition().getDesease())).collect(Collectors.toSet()).size();
+				int other = gameStatus.getCharacterHand(((ShareKnowledge)gameAction).getCharacter()).getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(gameStatus.getCurrentCharacterPosition().getDesease())).collect(Collectors.toSet()).size();
+				if(current>=other && gameAction instanceof ReceiveKnowledge) {
+					return 2000;
+				} else if (current <= other && gameAction instanceof GiveKnowledge) {
+					return 2000;
+				}
+			}
 			return 0;
 		} else if (gameAction.getClass().isAssignableFrom(Cure.class)) {
 			return 2000;
 		}  else if (gameAction.getClass().isAssignableFrom(Build.class)) {
-			return 20;
+			for(City city : gameStatus.getCurrentCharacterPosition().getNeighbourSet()) {
+				if(gameStatus.hasResearchCenter(city)) {
+					return 0;
+				}
+			}
+			if(!gameStatus.getCuredDeseaseSet().contains(gameStatus.getCurrentCharacterPosition().getDesease())) {
+				int max = 0;
+				Hand bestHand = null;
+				for(Hand hand : gameStatus.getCharacterHandList()) {
+					int current = hand.getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(gameStatus.getCurrentCharacterPosition().getDesease())).collect(Collectors.toSet()).size();
+					max = current>max ? current:max;
+					bestHand = bestHand == null || current>max ? hand:bestHand;
+				}
+				if(bestHand == gameStatus.getCurrentHand()) {
+					return 1;
+				}
+			}
+			return 40;
 		} else if (gameAction.getClass().isAssignableFrom(Pass.class)) {
 			return 0;
+		} else if (gameAction.getClass().isAssignableFrom(Discard.class)) {
+			if(((Discard)gameAction).getCard() instanceof CityCard) {
+				if(gameStatus.getCuredDeseaseSet().contains(((CityCard)((Discard)gameAction).getCard()).getCity().getDesease())) {
+					return 50;
+				} else {
+					int max = 0;
+					Hand bestHand = null;
+					for(Hand hand : gameStatus.getCharacterHandList()) {
+						int current = hand.getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(((CityCard)((Discard)gameAction).getCard()).getCity().getDesease())).collect(Collectors.toSet()).size();
+						max = current>max ? current:max;
+						bestHand = bestHand == null || current>max ? hand:bestHand;
+					}
+					if(bestHand == gameStatus.getCurrentHand()) {
+						return 1;
+					} else {
+						return 10;
+					}
+				}
+			}
 		}
 		return 1;
 	}
 	
-	public static int getWeight(GameStatus gameStatus) {
-		int weight = 0;
-		weight += (maxEclosionCounter - gameStatus.getEclosionCounter()) * 500;
-		weight += 300*GameProperties.map.size();
-		for(City city : GameProperties.map) {
-			switch(gameStatus.getCityCubeSet(city, city.getDesease()).size()) {
-			case 0:
-				break;
-			case 1:
-				weight -=50;
-				break;
-			case 2:
-				weight -=100;
-				break;
-			case 3 :
-				weight -=200;
-				if(gameStatus.getPropagationDeck().isInMemory(city)) {
-					weight -=100;
-				}
-				break;
-			default: 
-				weight -=300;
-				break;
-			}
-		}
-		weight +=1000;
-		for(Desease desease : GameProperties.deseaseSet) {
-			weight -=Math.max(gameStatus.getCubeCurrentReserve(desease).size()*50,250);
-		}
-		weight += gameStatus.getCuredDeseaseSet().size()*1000;
-		weight += gameStatus.getEradicatedDeseaseSet().size()*250;
-		
-		for(Desease desease : GameProperties.deseaseSet) {
-			int max = 0;
-			if(!gameStatus.getCuredDeseaseSet().contains(desease)) {
-				for(Hand hand : gameStatus.getCharacterHandList()) {
-					int current = hand.getCardDeck().stream().filter((Predicate<? super Card>) GameUtil.getCityCardPredicate(desease)).collect(Collectors.toSet()).size();
-					max = current>max ? current:max;
-				}
-			}
-			weight += 40*max;
-		}
-		gameStatus.value=weight;
-		return gameStatus.value;
-	}
+	
 	
 }
