@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import game.GameStatus;
+import game.action.GiveKnowledge;
+import game.action.ReceiveKnowledge;
 import objects.Character;
 import objects.City;
 import util.GameUtil;
@@ -15,10 +17,14 @@ import util.GameUtil;
 public class Hand extends Deck {
 	
 	objects.Character character;
+	ReceiveKnowledge receiveKnowledgeAction;
+	GiveKnowledge giveKnowledgeAction;
 	
 	public Hand(Character character) {
 		super(PlayerCard.class, new LinkedList<Card>(), new Deck(PlayerCard.class,new LinkedList<Card>(), null));
 		this.character = character;
+		giveKnowledgeAction = new GiveKnowledge(character);
+		receiveKnowledgeAction = new ReceiveKnowledge(character);
 	}
 	
 	public Character getCharacter() {
@@ -78,6 +84,14 @@ public class Hand extends Deck {
 		
 		clone.discardPile = new Deck(PlayerCard.class,new LinkedList<Card>(), null);
 		return clone;
+	}
+
+	public GiveKnowledge getGiveKnowledgeAction() {
+		return giveKnowledgeAction;
+	}
+
+	public ReceiveKnowledge getReceiveKnowledgeAction() {
+		return receiveKnowledgeAction;
 	}
 
 	

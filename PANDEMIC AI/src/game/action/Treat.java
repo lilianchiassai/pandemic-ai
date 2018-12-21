@@ -26,6 +26,10 @@ public class Treat extends GameAction {
 		this.strength=strength;
 		this.actionCost=cost;
 	}
+	
+	public String toString() {
+		return "Treat ("+strength+")";
+	}
 
 	public boolean perform(GameStatus gameStatus) {
 		Set<Cube> cubeSet = gameStatus.getCityCubeSet(gameStatus.getCurrentCharacterPosition(), desease);

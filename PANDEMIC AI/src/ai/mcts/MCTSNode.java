@@ -106,7 +106,7 @@ public class MCTSNode {
 				this.addChild(node);
 			}
 		} else {
-			List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActions(gameStatus, gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentActionCount());
+			List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActionLists(gameStatus);
 			for(List<SuperAction> superActionList : superActionListSet) {
 				GameStatus clone = gameStatus.clone();
 				for(SuperAction superAction : superActionList) {

@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import game.GameEngine;
 import game.GameProperties;
 import game.GameRules;
-import game.GameRules.GameStep;
 import game.GameStatus;
 import game.RolloutPlayer;
 import game.action.GameAction;
@@ -80,7 +79,7 @@ public class MonteCarloTreeSearch {
 		//gameStatus.previousActionList.clear();
 		//gameStatus.updateValue();
 		//List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus.value, gameStatus, gameStatus.getGameStep()==GameStep.play);
-		List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActions(gameStatus, gameStatus.getCurrentCharacterPosition(), gameStatus.getCurrentActionCount());
+		List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActionLists(gameStatus);
 		/*for(List<SuperAction> superActionList : superActionListSet) {
 			GameStatus clone = gameStatus.clone();
 			for(SuperAction superAction : superActionList) {

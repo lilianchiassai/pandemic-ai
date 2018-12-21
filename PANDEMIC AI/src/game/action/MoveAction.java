@@ -24,6 +24,7 @@ public abstract class MoveAction extends GameAction {
 	
 	public void perform(LightGameStatus lightGameStatus) {
 		lightGameStatus.actionCount-=this.actionCost;
+		lightGameStatus.position=this.destination;
 	}
 	
 	public boolean cancel(GameStatus gameStatus) {

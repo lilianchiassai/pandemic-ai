@@ -25,12 +25,6 @@ public abstract class GameAction implements Serializable {
 			gameStatus.decreaseCurrentActionCount(this.actionCost);
 			return true;
 		}
-		try {
-			throw new Exception();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		return false;
 	}
 	
