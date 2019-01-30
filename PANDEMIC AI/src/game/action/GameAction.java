@@ -35,14 +35,6 @@ public abstract class GameAction implements Serializable {
 	public boolean canPerform(GameStatus gameStatus) {
 		return gameStatus.getCurrentActionCount() >= this.actionCost;
 	}
-	
-	public boolean cancel(GameStatus gameStatus) {
-		if(GameProperties.actionCount - gameStatus.getCurrentActionCount() >=0 && gameStatus.removeFromActionList(this)) {
-			gameStatus.increaseCurrentActionCount(this.actionCost);
-			return true;
-		}
-		return false;
-	}
 
 	public int getCost() {
 		return this.actionCost;

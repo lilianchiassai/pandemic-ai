@@ -37,13 +37,6 @@ public class Discard extends GameAction {
 		return gameStatus.getCharacterHand(character).getCardDeck().contains(card);
 	}
 	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.getCharacterHand(character).drawBack(gameStatus, (PlayerCard) card);
-		}
-		return true;
-	}
-
 	public static Set<GameAction> getValidGameActionSet(GameStatus gameStatus, objects.Character character) {
 		Set<GameAction> discardSet = new HashSet<GameAction>();
 		if(gameStatus.getCharacterHand(character).getCardDeck().size() > 7) {

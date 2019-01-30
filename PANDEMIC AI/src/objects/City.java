@@ -10,7 +10,6 @@ import java.util.Set;
 
 import game.action.CharterFlight;
 import game.action.DirectFlight;
-import game.action.Drive;
 import game.action.GameAction;
 import game.action.MultiDrive;
 import game.action.ShuttleFlight;
@@ -23,15 +22,19 @@ public class City implements Serializable{
 	private CityCard cityCard;
 	private Set<City> neighbourSet;
 
-	public Map<City, Integer> cityToDistanceMap;
-	public ArrayList<Set<City>> distanceToCityMap;
+	private Map<City, Integer> cityToDistanceMap;
+	private ArrayList<Set<City>> distanceToCityMap;
 	
-	private Drive driveAction;
-	private Map<City, MultiDrive> multiDriveActionMap;
-	private Set<Drive> driveActionSet;
-	private Map<City, CharterFlight> charterFlightActionMap;
-	private Map<City, DirectFlight> directFlightActionMap;
-	private Map<City, ShuttleFlight> shuttleFlightActionMap;
+	private HashMap<City, MultiDrive> multiDriveActionMap;
+	private ArrayList<Set<MultiDrive>> distanceToMultiDriveMap;
+	private Set<ShuttleFlight> shuttleFlightActionSet;
+	private Set<CharterFlight> charterFlightActionSet;
+	private Set<DirectFlight> directFlightActionSet;
+	
+	/*Action to enter the city*/
+	private CharterFlight charterFlightAction;
+	private DirectFlight directFlightAction;
+	private ShuttleFlight shuttleFlightAction;
 
 	
 	
@@ -46,12 +49,16 @@ public class City implements Serializable{
 		this.distanceToCityMap = new ArrayList<Set<City>>();
 		this.distanceToCityMap.add(new HashSet<City>());
 		this.distanceToCityMap.get(0).add(this);
-		this.multiDriveActionMap = new HashMap<City, MultiDrive>();
 		
-		this.driveActionSet = new HashSet<Drive>();
-		this.charterFlightActionMap = new HashMap<City,CharterFlight>();
-		this.directFlightActionMap = new HashMap<City,DirectFlight>();
-		this.shuttleFlightActionMap = new HashMap<City,ShuttleFlight>();
+		this.multiDriveActionMap = new HashMap<City, MultiDrive>();
+		this.distanceToMultiDriveMap = new ArrayList<Set<MultiDrive>>();
+		this.charterFlightActionSet = new HashSet<CharterFlight>();
+		this.directFlightActionSet = new HashSet<DirectFlight>();
+		this.shuttleFlightActionSet = new HashSet<ShuttleFlight>();
+		
+		this.charterFlightAction = new CharterFlight(this);
+		this.directFlightAction = new DirectFlight(this);
+		this.shuttleFlightAction = new ShuttleFlight(this);
 	}
 
 	public String getName() {
@@ -66,53 +73,42 @@ public class City implements Serializable{
 		return population;
 	}
 	
-	public Drive getDriveAction() {
-		return this.driveAction;
+	public CharterFlight getCharterFlightAction() {
+		return this.charterFlightAction;
 	}
 	
-	public Set<Drive> getDriveActionSet() {
-		return this.driveActionSet;
+	public DirectFlight getDirectFlightAction() {
+		return this.directFlightAction;
 	}
 	
-	public Collection<CharterFlight> getCharterFlightActionSet() {
-		return this.charterFlightActionMap.values();
+	public ShuttleFlight getShuttleFlightAction() {
+		return this.shuttleFlightAction;
 	}
 	
-	public GameAction getCharterFlightAction(City to) {
-		return this.charterFlightActionMap.get(to);
-	}
-	
-	public DirectFlight getDirectFlightAction(City to) {
-		return this.directFlightActionMap.get(to);
-	}
-	
-	public ShuttleFlight getShuttleFlightAction(City to) {
-		return this.shuttleFlightActionMap.get(to);
+	public Collection<MultiDrive> getMultiDriveActionSet(int distance) {
+		return this.distanceToMultiDriveMap.get(distance);
 	}
 	
 	public void initGameActions(Set<City> map) {
 		for(City city : map) {
 			if(this != city) {
-				this.charterFlightActionMap.put(city, new CharterFlight(this, city));
-				this.directFlightActionMap.put(city, new DirectFlight(this, city));
-				this.shuttleFlightActionMap.put(city,new ShuttleFlight(this, city));
+				this.charterFlightActionSet.add(city.getCharterFlightAction());
+				this.directFlightActionSet.add(city.getDirectFlightAction());
+				this.shuttleFlightActionSet.add(city.getShuttleFlightAction());
 			}
 		}
-		
 	}
 	
 	public void addNeighbour(City city) {
 		this.neighbourSet.add(city);
-		this.driveActionSet.add(new Drive(this, city));
-		this.charterFlightActionMap.remove(city);
-		this.directFlightActionMap.remove(city);
-		this.shuttleFlightActionMap.remove(city);
+		this.charterFlightActionSet.remove(city.getCharterFlightAction());
+		this.directFlightActionSet.remove(city.getDirectFlightAction());
+		this.shuttleFlightActionSet.remove(city.getShuttleFlightAction());
 	}
 	
 	public void initDistances(Set<City> map) {
-		int distance = 1;
 		HashMap<City, Integer> cache = new HashMap<City, Integer>();
-		
+		int distance = 1;
 		while(this.cityToDistanceMap.size()<map.size()) {
 			for(City neighbour : this.cityToDistanceMap.keySet()) {
 				for(City city : neighbour.getNeighbourSet()) {
@@ -130,8 +126,14 @@ public class City implements Serializable{
 		
 		
 		//Init multidrive actions
-		for(City destination : map) {
-			this.multiDriveActionMap.put(destination, new MultiDrive(this, destination));
+		for(int i = 1; i<5; i++) {
+			HashSet multiDriveSet = new HashSet<MultiDrive>();
+			for(City destination : this.getCitiesAtDistance(i)) {
+				MultiDrive multiDrive = new MultiDrive(this, destination);
+				this.multiDriveActionMap.put(destination, multiDrive);
+				multiDriveSet.add(multiDrive);
+			}
+			this.distanceToMultiDriveMap.add(multiDriveSet);
 		}
 	}
 	
@@ -160,7 +162,20 @@ public class City implements Serializable{
 	}
 
 	public MultiDrive getMultiDrive(City destination) {
-		return this.multiDriveActionMap.get(destination);
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Set<CharterFlight> getCharterFlightActionSet() {
+		return this.charterFlightActionSet;
+	}
+	
+	public Set<DirectFlight> getDirectFlightActionSet() {
+		return this.directFlightActionSet;
+	}
+	
+	public Set<ShuttleFlight> getShuttleFlightActionSet() {
+		return this.shuttleFlightActionSet;
 	}
 
 }

@@ -91,7 +91,7 @@ public class HumanPlayer extends Player {
 		} else if(str.startsWith("shuttleFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = gameStatus.getCurrentCharacterPosition().getShuttleFlightAction(city);
+			gameAction = city.getShuttleFlightAction();
 		} else if (str.startsWith("treat")) {
 			String deseaseName = str.split("-")[1];
 			Desease desease = GameUtil.getDesease(deseaseName);

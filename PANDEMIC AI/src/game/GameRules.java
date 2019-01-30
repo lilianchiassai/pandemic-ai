@@ -1,9 +1,12 @@
 package game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,8 +19,11 @@ import game.action.DirectFlight;
 import game.action.Discard;
 import game.action.Drive;
 import game.action.GameAction;
+import game.action.GiveKnowledge;
 import game.action.MoveAction;
+import game.action.MultiDrive;
 import game.action.Pass;
+import game.action.ReceiveKnowledge;
 import game.action.ShareKnowledge;
 import game.action.ShuttleFlight;
 import game.action.Treat;
@@ -25,14 +31,17 @@ import objects.Character;
 import objects.City;
 import objects.Cube;
 import objects.Desease;
+import objects.card.Card;
 import objects.card.CityCard;
 import objects.card.EpidemicCard;
 import objects.card.PlayerCard;
 import objects.card.PropagationCard;
+import tree.Node;
 import util.GameUtil;
 
 public class GameRules {
-
+	
+	
 	public enum GameStep {
 		turnStart, play, draw, propagate, win, lose, discard, event
 	}
@@ -272,9 +281,9 @@ public class GameRules {
 			gameStatus.actionList.addAll(Build.getValidGameActionSet(gameStatus));
 			gameStatus.actionList.addAll(ShareKnowledge.getValidGameActionSet(gameStatus));
 			gameStatus.actionList.addAll(Pass.getValidGameActionSet(gameStatus));
-			gameStatus.actionList.addAll(Drive.getValidGameActionSet(gameStatus));
+			/*gameStatus.actionList.addAll(Drive.getValidGameActionSet(gameStatus));
 			gameStatus.actionList.addAll(DirectFlight.getValidGameActionSet(gameStatus));
-			gameStatus.actionList.addAll(CharterFlight.getValidGameActionSet(gameStatus));
+			gameStatus.actionList.addAll(CharterFlight.getValidGameActionSet(gameStatus));*/
 			gameStatus.actionList.addAll(ShuttleFlight.getValidGameActionSet(gameStatus));
 				
 		}
@@ -436,4 +445,222 @@ public class GameRules {
 		}
 		return 0;
 	}
+	
+	public static Set<List<GameAction>> getGameActionList(Node<GameAction> node) {
+		Set<List<GameAction>> result = new HashSet<List<GameAction>>();
+		if(node.getChildren() !=null) {
+			for(Node<GameAction> child : node.getChildren()) {
+				if(child.isLeaf()) {
+					result.add(child.getAncestorDataList());
+				} else {
+					result.addAll(getGameActionList(child));
+				}
+			}
+		}
+		return result;
+	}
+	
+	public static Node<GameAction> expandActionTree(City origin) {
+		Node root = new Node(null, null);
+		expandActionTree(root, origin, 4);
+		return root;
+	}
+	
+	static int counter = 0;
+	
+	private static void expandActionTree(Node<GameAction> root, City origin, int actionCount) {
+		if(actionCount == 3) {
+			counter++;
+			logger.warn(counter);
+		}
+		if(actionCount >0) {
+			City neworigin = origin;
+			if( root.getData() instanceof MoveAction) {
+				neworigin = ((MoveAction) root.getData()).getDestination();
+			}
+			root.expand(getAllPossibleDefaultActions(neworigin, root.getData(), actionCount));
+			for(Node<GameAction> node : root.getChildren()) {
+				expandActionTree(node, neworigin, actionCount - node.getData().getCost());
+			}
+		}	
+	}
+	static City defaultOrigin = new City("Default Origin", null, 0);
+	
+	private static ArrayList<GameAction> getAllPossibleDefaultActions(City origin, GameAction previousAction, int actionCount) {
+		ArrayList<GameAction> actionList = new ArrayList<GameAction>();
+		if(!(previousAction instanceof MultiDrive || previousAction instanceof DirectFlight || previousAction instanceof CharterFlight)) {
+			for(int i = 0; i<actionCount; i++) {
+				actionList.addAll(origin.getMultiDriveActionSet(i));
+			}
+		}
+		if(!(previousAction instanceof DirectFlight || previousAction instanceof CharterFlight)) {
+			actionList.addAll(origin.getDirectFlightActionSet());
+			actionList.addAll(origin.getCharterFlightActionSet());
+			if(!(previousAction instanceof ShuttleFlight)) {
+				actionList.addAll(origin.getShuttleFlightActionSet());
+			}
+		}
+		if(!(previousAction instanceof Cure)){
+			actionList.addAll(Cure.getDefaultGameActionSet());
+		}
+		actionList.addAll(Treat.getDefaultGameActionSet());
+		if(!(previousAction instanceof Build)){
+			actionList.addAll(Build.getDefaultGameActionSet());
+		}
+		actionList.addAll(ShareKnowledge.getDefaultGameActionSet());
+		actionList.addAll(Pass.getDefaultGameActionSet(actionCount));
+		
+		return actionList;
+	}
+	
+	private static boolean isValuable(Node<GameAction> node, Node<GameAction> root) {
+		 return !isEquivalentOrInferior(node, root);
+	}
+	
+	public static void filterActionTree(Node<GameAction> node,Node<GameAction> root) {
+		if(node == root || isValuable(node,root)) {
+			if(!node.isLeaf()) {
+				for(Node<GameAction> child : node.getChildren()) {
+					filterActionTree(child,root);
+				}
+			}
+		} else {
+			node.getParent().removeChild(node);
+		}
+	}
+	
+	private static boolean isEquivalentOrInferior(Node<GameAction> node1, Node<GameAction> root) {
+		/*
+		 * Is equivalent if
+		 * last destination is the same
+		 * total of treat actions are the same in the same cities or inferior (if no cure)
+		 * build actions on the same spot
+		 * shareknowledge on the same spot
+		 * directflight to the same spot
+		 * 
+		 * 
+		 */
+		
+		class GameActionListEffects {
+			Set<City> builtResearchCenters;
+			Set<Desease> curedDesease;
+			Set<Card> cardDiscarded;
+			Map<Card, Character> cardReceived;
+			Map<Card, Character> cardGiven;
+			Map<Desease, Map<City,Integer>> treatedDeseasePriorCure;
+			Map<Desease, Set<City>> treatedDeseaseAfterCure;
+			City finalDestination;
+			int actionCost;
+			boolean coherence;
+			
+			GameActionListEffects(List<GameAction> ancestorDataList) {
+				builtResearchCenters = new HashSet<City>();
+				curedDesease = new HashSet<Desease>();
+				cardDiscarded = new HashSet<Card>();
+				cardReceived = new HashMap<Card,Character>();
+				cardGiven = new HashMap<Card,Character>();
+				treatedDeseasePriorCure = new HashMap<Desease,Map<City,Integer>>();
+				treatedDeseaseAfterCure = new HashMap<Desease,Set<City>>();
+				for(Desease desease : GameProperties.deseaseSet) {
+					treatedDeseasePriorCure.put(desease, new HashMap<City,Integer>());
+					treatedDeseaseAfterCure.put(desease, new HashSet<City>());
+				}
+				finalDestination = defaultOrigin;
+				actionCost = 0;
+				for(GameAction gameAction : ancestorDataList) {
+					if(gameAction instanceof Drive) {
+						finalDestination = ((Drive)gameAction).getDestination();
+						actionCost+= gameAction.getCost();
+					} else if (gameAction instanceof DirectFlight){
+						finalDestination = ((DirectFlight)gameAction).getDestination();
+						if(cardGiven.keySet().contains(finalDestination.getCityCard()) || cardDiscarded.contains(finalDestination.getCityCard())) {
+							coherence = false;
+						}
+						cardDiscarded.add(finalDestination.getCityCard());
+						actionCost+= gameAction.getCost();
+					} else if (gameAction instanceof CharterFlight){
+						if(cardGiven.keySet().contains(finalDestination.getCityCard()) || cardDiscarded.contains(finalDestination.getCityCard())) {
+							coherence = false;
+						}
+						cardDiscarded.add(finalDestination.getCityCard());
+						finalDestination = ((CharterFlight)gameAction).getDestination();
+						actionCost+= gameAction.getCost();
+					} else if (gameAction instanceof Treat){
+						if(curedDesease.contains(((Treat)gameAction).getDesease())) {
+							if(treatedDeseaseAfterCure.get(((Treat)gameAction).getDesease()).contains(finalDestination)) {
+								coherence = false;
+							}
+							treatedDeseaseAfterCure.get(((Treat)gameAction).getDesease()).add(finalDestination);
+						} else {
+							if(treatedDeseasePriorCure.get(((Treat)gameAction).getDesease()).get(finalDestination) == null) {
+								treatedDeseasePriorCure.get(((Treat)gameAction).getDesease()).put(finalDestination, 1);								
+							} else {
+								treatedDeseasePriorCure.get(((Treat)gameAction).getDesease()).put(finalDestination, treatedDeseasePriorCure.get(((Treat)gameAction).getDesease()).get(finalDestination)+1);								
+							}
+						}
+					} else if (gameAction instanceof ReceiveKnowledge){
+						if(cardGiven.get(finalDestination.getCityCard()) == ((ShareKnowledge) gameAction).getCharacter() ||cardReceived.keySet().contains(finalDestination.getCityCard()) || cardGiven.keySet().contains(finalDestination.getCityCard()) || cardDiscarded.contains(finalDestination.getCityCard())) {
+							coherence = false;
+						}
+						cardReceived.put(finalDestination.getCityCard(),((ShareKnowledge) gameAction).getCharacter());
+					} else if (gameAction instanceof GiveKnowledge){
+						if(cardReceived.get(finalDestination.getCityCard()) == ((ShareKnowledge) gameAction).getCharacter() || cardGiven.keySet().contains(finalDestination.getCityCard()) || cardDiscarded.contains(finalDestination.getCityCard())) {
+							coherence = false;
+						}
+						cardGiven.put(finalDestination.getCityCard(), ((ShareKnowledge) gameAction).getCharacter());
+					} else if (gameAction instanceof Build){
+						builtResearchCenters.add(finalDestination);
+					} else if (gameAction instanceof Cure){
+						if(cardDiscarded.size()+cardGiven.keySet().size()-cardGiven.keySet().size()>2 || curedDesease.size()>0) {
+							coherence = false;
+						}
+						curedDesease.add(((Cure)gameAction).getDesease());
+						cardDiscarded.addAll(((Cure)gameAction).getSet());
+					}
+				}
+			}
+			
+			boolean equivalentOrInferior(GameActionListEffects nodeEffects) {
+				boolean equals = true;
+				if ((!coherence) ||
+						(nodeEffects.builtResearchCenters.containsAll(this.builtResearchCenters)
+						&& nodeEffects.curedDesease.containsAll(this.curedDesease)
+						&& nodeEffects.cardDiscarded.containsAll(this.cardDiscarded)
+						&& nodeEffects.cardReceived.equals(this.cardReceived)
+						&& nodeEffects.cardGiven.equals(this.cardGiven)
+						&& nodeEffects.treatedDeseasePriorCure.equals(this.treatedDeseasePriorCure)
+						&& nodeEffects.treatedDeseaseAfterCure.equals(this.treatedDeseaseAfterCure)
+						&& nodeEffects.finalDestination == this.finalDestination
+						&& nodeEffects.actionCost <= this.actionCost)
+						) {
+					return true;
+				} 
+				return false;
+			}
+		}
+		
+		GameActionListEffects effectNode1 = new GameActionListEffects(node1.getAncestorDataList());
+		Set<List<GameAction>> gameActionList = GameRules.getGameActionList(root);
+		if(gameActionList!=null && gameActionList.size()>0) {
+			for(List<GameAction> actionList : gameActionList) {
+				GameActionListEffects effectNode2 = new GameActionListEffects(actionList);
+				if(effectNode1.equivalentOrInferior(effectNode2)) {
+					return true;
+				}
+			}
+		}
+		
+			
+		return false;
+	}
+	
+	public Set<ArrayList<GameAction>> findActionLists() {
+		
+		
+		
+		return null;
+	}
+	
+	
+	
 }

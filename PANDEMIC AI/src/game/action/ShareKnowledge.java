@@ -3,6 +3,7 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
+import game.GameProperties;
 import game.GameRules;
 import game.GameStatus;
 import objects.Character;
@@ -10,7 +11,7 @@ import objects.card.CityCard;
 import objects.card.Hand;
 import util.GameUtil;
 
-public abstract class ShareKnowledge extends GameAction {
+public class ShareKnowledge extends GameAction {
 	Character character;
 	
 	public ShareKnowledge(Character character) {
@@ -33,6 +34,15 @@ public abstract class ShareKnowledge extends GameAction {
 				}
 				
 			}
+		}
+		return shareKnowledgeSet;
+	}
+	
+	public static Set<ShareKnowledge> getDefaultGameActionSet() {
+		Set<ShareKnowledge> shareKnowledgeSet = new HashSet<ShareKnowledge>();
+		for(Character character : GameProperties.characterReserve) {
+			shareKnowledgeSet.add(new GiveKnowledge(character));
+			shareKnowledgeSet.add(new ReceiveKnowledge(character));
 		}
 		return shareKnowledgeSet;
 	}

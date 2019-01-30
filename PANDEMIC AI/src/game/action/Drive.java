@@ -1,8 +1,8 @@
 package game.action;
 
-import java.util.HashSet;
 import java.util.Set;
 
+import game.GameProperties;
 import game.GameStatus;
 import game.LightGameStatus;
 import objects.City;
@@ -10,8 +10,8 @@ import util.GameUtil;
 
 public class Drive extends MoveAction {
 	
-	public Drive(City origin, City destination) {
-		super(origin, destination);
+	public Drive(City destination) {
+		super(destination);
 	}
 
 	@Override
@@ -30,18 +30,12 @@ public class Drive extends MoveAction {
 		lightGameStatus.position = destination;
 		lightGameStatus.actionCount-=this.actionCost;
 	}
-	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), origin);
-		}
-		return true;
-	}
-	
 
-	public static Set<Drive> getValidGameActionSet(GameStatus gameStatus) {
+	/*public static Set<Drive> getValidGameActionSet(GameStatus gameStatus) {
 		return gameStatus.getCurrentCharacterPosition().getDriveActionSet();
-	}
+	}*/
 
-	
+	public static Set<Drive> getDefaultGameActionSet() {
+		return GameProperties.driveActionSet;
+	}
 }

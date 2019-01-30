@@ -650,10 +650,4 @@ public class GameStatus implements Serializable {
 		return false;
 	}
 
-	public boolean rollBack() {
-		return this.previousActionList.getLast().cancel(this);
-	}
-	
-
-
 }

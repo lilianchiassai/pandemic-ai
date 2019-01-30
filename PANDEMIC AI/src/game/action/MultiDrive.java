@@ -5,10 +5,11 @@ import objects.City;
 import util.GameUtil;
 
 public class MultiDrive extends MoveAction {
-
+	City origin;
 	
 	public MultiDrive(City origin, City destination) {
-		super(origin, destination);
+		super(destination);
+		this.origin=origin;
 		this.actionCost = origin.getDistance(destination);
 	}
 	
@@ -23,6 +24,10 @@ public class MultiDrive extends MoveAction {
 			return gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), destination);
 		}
 		return false;
+	}
+
+	public City getOrigin() {
+		return this.origin;
 	}
 
 }

@@ -1,5 +1,6 @@
 package game.action;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,6 +30,12 @@ public class Pass extends GameAction {
 	public static Set<Pass> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Pass> passSet = new HashSet<Pass>();
 		passSet.add(GameProperties.passActionList.get(gameStatus.getCurrentActionCount()));
+		return passSet;
+	}
+
+	public static Set<Pass> getDefaultGameActionSet(int actionCount) {
+		Set<Pass> passSet = new HashSet<Pass>();
+		passSet.add(GameProperties.passActionList.get(actionCount));
 		return passSet;
 	}
 }

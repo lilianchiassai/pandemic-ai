@@ -13,8 +13,8 @@ import util.GameUtil;
 public class CharterFlight extends MoveAction {
 	
 	
-	public CharterFlight(City origin, City destination) {
-		super(origin, destination);
+	public CharterFlight(City destination) {
+		super(destination);
 	}
 	
 	@Override
@@ -32,20 +32,16 @@ public class CharterFlight extends MoveAction {
 		lightGameStatus.hand.remove(lightGameStatus.position.getCityCard());
 		lightGameStatus.position = destination;
 	}
-
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.getCurrentHand().drawBack(gameStatus, origin.getCityCard());
-			gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), origin);
-		}
-		return true;
-	}
 	
-	public static Set<CharterFlight> getValidGameActionSet(GameStatus gameStatus) {
+	/*public static Set<CharterFlight> getValidGameActionSet(GameStatus gameStatus) {
 		HashSet<CharterFlight> resultSet = new HashSet<CharterFlight>();
 		if(gameStatus.getCurrentHand().getCityCard(gameStatus.getCurrentCharacterPosition()) != null) {
 				resultSet.addAll(gameStatus.getCurrentCharacterPosition().getCharterFlightActionSet());
 		}
 		return resultSet;
+	}*/
+	
+	public static Set<CharterFlight> getDefaultGameActionSet() {
+		return GameProperties.charterFlightActionSet;
 	}
 }

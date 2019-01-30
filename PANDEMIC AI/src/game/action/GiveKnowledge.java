@@ -32,11 +32,4 @@ public class GiveKnowledge extends ShareKnowledge {
 		lightGameStatus.hand.remove(lightGameStatus.position.getCityCard());
 		lightGameStatus.actionCount-=this.actionCost;
 	}
-	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			return GameRules.giveCard(gameStatus, character, gameStatus.getCurrentPlayer(), gameStatus.getCurrentCharacterPosition().getCityCard());
-		}
-		return true;
-	}
 }

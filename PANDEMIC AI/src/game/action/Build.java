@@ -47,13 +47,6 @@ public class Build extends GameAction {
 		return false;
 	}
 	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.removeResearchCenter(gameStatus.getCurrentCharacterPosition());
-			gameStatus.getCurrentHand().drawBack(gameStatus, gameStatus.getCurrentCharacterPosition().getCityCard());
-		}
-		return true;
-	}
 
 	public static Set<Build> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Build> buildFlightSet = new HashSet<Build>();
@@ -61,6 +54,12 @@ public class Build extends GameAction {
 		if(cityCard != null && !gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition()) && gameStatus.getResearchCenterCurrentReserve().size()>0) {
 			buildFlightSet.add(GameProperties.buildAction);
 		}	
+		return buildFlightSet;
+	}
+	
+	public static Set<Build> getDefaultGameActionSet() {
+		Set<Build> buildFlightSet = new HashSet<Build>();
+		buildFlightSet.add(GameProperties.buildAction);
 		return buildFlightSet;
 	}
 }

@@ -48,6 +48,10 @@ public class GameProperties {
 	public static List<Pass> passActionList;
 	public static Map<Desease,List<Treat>> treatAction;
 	public static Map<Desease,List<Treat>> treatCuredAction;
+	public static Set<Drive> driveActionSet;
+	public static Set<CharterFlight> charterFlightActionSet;
+	public static Set<DirectFlight> directFlightActionSet;
+	public static Map<Desease,Set<Cure>> cureActionMap;
 	
 	static int maxEclosionCounter;	
 	public static int actionCount;
@@ -60,6 +64,7 @@ public class GameProperties {
 	static Set<PropagationCard> propagationCardReserve;
 	public static EpidemicCard epidemicCardReserve;
 	public static LinkedList<Character> characterReserve;
+	
 
 	public static int visitCount = 0;
 
@@ -416,11 +421,12 @@ public class GameProperties {
 		logger.info("Creating Cards");
 		propagationCardReserve = new HashSet<PropagationCard>();
 		playerCardReserve = new HashSet<PlayerCard>();
+		
+		
 		for(City city : map) {
 			//Create propagation card
 			propagationCardReserve.add(new PropagationCard(city));
 			playerCardReserve.add(new CityCard(city));
-			
 		}
 		epidemicCardReserve = new EpidemicCard();
 		
@@ -455,6 +461,34 @@ public class GameProperties {
 			treatCuredAction.put(desease, treatActionList);
 		}
 		
+		driveActionSet = new HashSet<Drive>();
+		directFlightActionSet = new HashSet<DirectFlight>();
+		charterFlightActionSet = new HashSet<CharterFlight>();
+		for(City city : map) {
+			driveActionSet.add(new Drive(city));
+			directFlightActionSet.add(new DirectFlight(city));
+			charterFlightActionSet.add(new CharterFlight(city));
+		}
+		
+		Map<Desease,Set<CityCard>> deseaseCityCardMap = new HashMap<Desease, Set<CityCard>>();
+		for(Desease desease : deseaseSet) {
+			Set<CityCard> cityCardSet = new HashSet<CityCard>();
+			deseaseCityCardMap.put(desease, cityCardSet);
+		}
+		for(PlayerCard playerCard : playerCardReserve) {
+			if(playerCard instanceof CityCard) {
+				deseaseCityCardMap.get(((CityCard)playerCard).getCity().getDesease()).add(((CityCard)playerCard));
+			}
+		}
+		cureActionMap = new HashMap<Desease, Set<Cure>>();
+		for(Desease desease : deseaseSet) {
+			Set<Set<Card>> combinationSet = Cure.getCombinations(deseaseCityCardMap.get(desease),5);
+			cureActionMap.put(desease, new HashSet<Cure>());
+			/*for(Set<Card> cardSet : combinationSet) {
+				cureActionMap.get(desease).add(new Cure(desease, cardSet));
+			}*/
+			cureActionMap.get(desease).add(new Cure(desease, new HashSet<Card>()));
+		}
 	}
 	
 	public static int getPropagationSpeed(int epidemicCounter) {

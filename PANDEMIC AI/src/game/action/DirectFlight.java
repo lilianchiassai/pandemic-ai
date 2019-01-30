@@ -3,6 +3,7 @@ package game.action;
 import java.util.HashSet;
 import java.util.Set;
 
+import game.GameProperties;
 import game.GameStatus;
 import game.LightGameStatus;
 import objects.City;
@@ -12,8 +13,8 @@ import util.GameUtil;
 
 public class DirectFlight extends MoveAction {
 	
-	public DirectFlight(City origin, City destination) {
-		super(origin, destination);
+	public DirectFlight(City destination) {
+		super(destination);
 	}
 	
 	@Override
@@ -33,20 +34,16 @@ public class DirectFlight extends MoveAction {
 		lightGameStatus.actionCount-=this.actionCost;
 	}
 
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.getCurrentHand().drawBack(gameStatus, destination.getCityCard());
-			gameStatus.setCharacterPosition(gameStatus.getCurrentPlayer(), origin);
-		}
-		return true;
-	}
-
-	public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
+	/*public static Set<MoveAction> getValidGameActionSet(GameStatus gameStatus) {
 		Set<MoveAction> directFlightSet = new HashSet<MoveAction>();
 		for(Card cityCard : gameStatus.getCurrentHand().getCityCardSet()) {
 			if(gameStatus.getCurrentCharacterPosition().getDirectFlightAction(((CityCard)cityCard).getCity()) != null)
 			directFlightSet.add(gameStatus.getCurrentCharacterPosition().getDirectFlightAction(((CityCard)cityCard).getCity()));
 		}
 		return directFlightSet;
+	}*/
+	
+	public static Set<DirectFlight> getDefaultGameActionSet() {
+		return GameProperties.directFlightActionSet;
 	}
 }

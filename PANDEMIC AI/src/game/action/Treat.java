@@ -48,21 +48,6 @@ public class Treat extends GameAction {
 		}
 		return false;
 	}
-	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			if(GameRules.isCured(gameStatus, desease)) {
-				for(int i = 0; i<strength; i++) {
-					gameStatus.addCube(gameStatus.getCurrentCharacterPosition(), desease);
-				}
-				GameRules.checkEradicated(gameStatus, desease);
-				return true;
-			} else {
-				return gameStatus.addCube(gameStatus.getCurrentCharacterPosition(), desease);
-			}
-		}
-		return true;
-	}
 
 	public static Set<Treat> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Treat> treatSet = new HashSet<Treat>();
@@ -77,5 +62,17 @@ public class Treat extends GameAction {
 			}
 		}
 		return treatSet;
+	}
+	
+	public static Set<Treat> getDefaultGameActionSet() {
+		Set<Treat> treatSet = new HashSet<Treat>();
+		for(Desease desease : GameProperties.deseaseSet) {
+			treatSet.add(GameProperties.treatAction.get(desease).get(0));
+		}
+		return treatSet;
+	}
+	
+	public Desease getDesease() {
+		return this.desease;
 	}
 }

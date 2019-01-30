@@ -43,14 +43,6 @@ public class Cure extends GameAction {
 		lightGameStatus.actionCount-=this.actionCost;
 	}
 	
-	public boolean cancel(GameStatus gameStatus) {
-		if(super.cancel(gameStatus)) {
-			gameStatus.getCurrentHand().drawBack(gameStatus, this.getSet());
-			GameRules.cancelCure(gameStatus, desease);
-		}
-		return true;
-	}
-
 	public static Set<Cure> getValidGameActionSet(GameStatus gameStatus) {
 		Set<Cure> cureSet = new HashSet<Cure>();
 		if(gameStatus.hasResearchCenter(gameStatus.getCurrentCharacterPosition())) {
@@ -68,6 +60,15 @@ public class Cure extends GameAction {
 		}
 		return cureSet;
 	}
+	
+	public static Set<Cure> getDefaultGameActionSet() {
+		Set<Cure> cureSet = new HashSet<Cure>();
+		for(Desease desease : GameProperties.deseaseSet) {
+			cureSet.addAll(GameProperties.cureActionMap.get(desease));
+		}
+		return cureSet;
+	}
+	
 	
 	public static Set<Set<Card>> getCombinations(Set set, int combinationSize) {
 		if(combinationSize == 1) {
@@ -99,5 +100,9 @@ public class Cure extends GameAction {
 
 	public void setSet(Set<Card> set) {
 		this.set = set;
+	}
+	
+	public Desease getDesease() {
+		return this.desease;
 	}
 }
