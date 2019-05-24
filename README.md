@@ -9,7 +9,8 @@ The following actions will be taken before advancing further in the project :
 - analysis on the impact of an external library to manage Tree/Nodes
 - isolation of the game engine from the players (human or AI)
 - clean and comment code
-
+- provide use instruction
+- update README
 
 The steps
 I Building a decent Pandemic Board game
