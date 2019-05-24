@@ -2,6 +2,15 @@
 The project aims to create self learning artificial intelligence capable to beat the board game Pandemic.
 As i know nothing about neural network and deep learning, I will start from scratch : no library will be used to manage neural network.
 
+Current state of development : after a few months pause I have time to start on thep project again.
+The following actions will be taken before advancing further in the project :
+- proper logging
+- maven migration to manage external libraries
+- analysis on the impact of an external library to manage Tree/Nodes
+- isolation of the game engine from the players (human or AI)
+- clean and comment code
+
+
 The steps
 I Building a decent Pandemic Board game
 1. Initializing the game (create architecture classes, useful methods) is its simplest way : no event card, no card limit, no character player
