@@ -10,7 +10,7 @@ The following actions will be taken before advancing further in the project :
 - isolation of the game engine from the players (human or AI)
 - clean and comment code
 - provide use instruction
-- update README
+- update README with mardown syntax
 
 The steps
 I Building a decent Pandemic Board game
