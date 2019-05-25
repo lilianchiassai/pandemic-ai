@@ -6,8 +6,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
 
 import game.GameProperties;
 import game.GameStatus;
@@ -60,7 +58,7 @@ public class GameUtil {
 		return (desease) -> (desease.getClass().isAssignableFrom(Desease.class) && ((Desease)desease).getName().equals(name));
 	}
 	
-	public static Graph<City, DefaultEdge> makeBidirectionnal(Graph<City, DefaultEdge> graph) {
+	/* public static Graph<City, DefaultEdge> makeBidirectionnal(Graph<City, DefaultEdge> graph) {
 		for (City source: graph.vertexSet()) {
 		    Set<DefaultEdge> edges = graph.outgoingEdgesOf(source);
 		    for (DefaultEdge edge : edges) {
@@ -72,7 +70,7 @@ public class GameUtil {
 		    }
 		}
 		return graph;
-	}
+	} */
 
 	public static Predicate<? super Card> getCardTitlePredicate(String title) {
 		return (card) -> (card instanceof Card && ((Card)card).getTitle().equals(title));

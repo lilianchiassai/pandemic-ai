@@ -195,7 +195,7 @@ public class GameRules {
 		}
 		return gameStatusList;
 	}
-	
+	/*
 	public static List<GameStatus> getAllPossibleGameStatus(int refValue, GameStatus gameStatus, boolean filter) {
 		LinkedList<GameStatus> resultList = new LinkedList<GameStatus>();
 		List<LinkedList<GameAction>> possibleActionLists = getAllPossibleGameActionsList(gameStatus);
@@ -238,9 +238,9 @@ public class GameRules {
 		}
 		return resultList;
 	}
-	
+	*/
 
-
+/*
 	public static List<LinkedList<GameAction>> getAllPossibleGameActionsList(GameStatus gameStatus) {
 		List<LinkedList<GameAction>> result = new ArrayList<LinkedList<GameAction>>();
 		if(canPlay(gameStatus) || mustDiscard(gameStatus)) {
@@ -266,7 +266,7 @@ public class GameRules {
 		}
 		
 		return result;
-	}
+	}*/
 	
 	public static List<GameAction> getAllPossibleActions(GameStatus gameStatus) {
 		gameStatus.actionList.clear();

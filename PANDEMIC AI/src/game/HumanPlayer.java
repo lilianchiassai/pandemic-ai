@@ -7,8 +7,11 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import game.action.CharterFlight;
 import game.action.Cure;
+import game.action.DirectFlight;
 import game.action.Discard;
+import game.action.Drive;
 import game.action.GameAction;
 import game.action.GiveKnowledge;
 import game.action.Pass;
@@ -79,15 +82,15 @@ public class HumanPlayer extends Player {
 		if(str.startsWith("drive")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = city.getDriveAction();
+			gameAction = new Drive(city);
 		} else if(str.startsWith("directFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = gameStatus.getCurrentCharacterPosition().getDirectFlightAction(city);
+			gameAction = new DirectFlight(city);
 		} else if(str.startsWith("charterFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);
-			gameAction = gameStatus.getCurrentCharacterPosition().getCharterFlightAction(city);
+			gameAction = new CharterFlight(city);
 		} else if(str.startsWith("shuttleFlight")) {
 			String cityName = str.split("-")[1];
 			City city = GameUtil.getCity(cityName);

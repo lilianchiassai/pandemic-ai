@@ -99,12 +99,13 @@ public class MCTSNode {
 		
 		this.expanded=true;
 		if(gameStatus.getGameStep() == GameStep.discard) {
-			List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus.value, gameStatus, gameStatus.getGameStep()==GameStep.play);
+			//TODO discard
+			/*List<GameStatus> gameStatusSet = GameRules.getAllPossibleGameStatus(gameStatus.value, gameStatus, gameStatus.getGameStep()==GameStep.play);
 			
 			for(GameStatus gameStatus : gameStatusSet) {
 				MCTSNode node = new MCTSNode(gameStatus, this);
 				this.addChild(node);
-			}
+			}*/
 		} else {
 			List<List<SuperAction>> superActionListSet = SuperAction.getAllPossibleSuperActionLists(gameStatus);
 			for(List<SuperAction> superActionList : superActionListSet) {
