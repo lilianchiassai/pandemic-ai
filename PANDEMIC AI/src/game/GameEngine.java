@@ -26,11 +26,11 @@ public class GameEngine extends Observable{
 		//Starting game
 		gameProperties = new GameProperties();
 		
-		Node actionRoot = GameRules.expandActionTree(GameUtil.getCity("Atlanta"));
-		System.out.println(GameRules.getGameActionList(actionRoot).size());
+		//Node actionRoot = GameRules.expandActionTree(GameUtil.getCity("Atlanta"));
+		//System.out.println(GameRules.getGameActionList(actionRoot).size());
 		//GameRules.filterActionTree(actionRoot,actionRoot);
-		System.out.println(GameRules.getGameActionList(actionRoot).size());
-		/*GameStatus gameStatus = new GameStatus(2,3, GameUtil.getCity("Atlanta"));
+		//System.out.println(GameRules.getGameActionList(actionRoot).size());
+		GameStatus gameStatus = new GameStatus(2,3, GameUtil.getCity("Atlanta"));
 		GameEngine gameEngine = new GameEngine(gameStatus, new AIPlayer(gameStatus,3000,200));
 		gameEngine.run();
 		if(gameStatus.isWin()) {
@@ -39,7 +39,7 @@ public class GameEngine extends Observable{
 			logger.info("You lose");
 		}
 		System.out.println("Number of plays : "+GameProperties.visitCount);
-		System.out.println("Number of victory : "+GameProperties.victoryCount);*/
+		System.out.println("Number of victory : "+GameProperties.victoryCount);
 	}
 	
 	public GameStatus run() {

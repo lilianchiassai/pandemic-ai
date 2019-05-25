@@ -58,7 +58,7 @@ public class StaticSuperAction {
 	public static Set<StaticSuperAction> getAllStaticSuperAction(LightGameStatus lightGameStatus, boolean share, boolean build, boolean cure, boolean treat, Set<City> visited) {
 		Set<StaticSuperAction> actionListSet = new HashSet<StaticSuperAction>();
 		
-		// retoune un set de listes d'actions sans bouger de la position indiquée pour le nombre d'actions indiquées.
+		// retoune un set de listes d'actions sans bouger de la position indique pour le nombre d'actions indiques.
 		if(lightGameStatus.actionCount == 0) {
 			return actionListSet;
 		}

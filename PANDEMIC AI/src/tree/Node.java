@@ -14,8 +14,11 @@ public class Node<T> {
 	public Node(Node<T> parent, T data) {
 		this.parent=parent;
 		this.data=data;
+		this.children=new ArrayList<Node<T>>();
 		this.ancestorDataList=new ArrayList<T>();
-		this.ancestorDataList.addAll(parent.getAncestorDataList());
+		if(parent!=null) {
+			this.ancestorDataList.addAll(parent.getAncestorDataList());
+		}
 		this.ancestorDataList.add(this.data);
 	}
 
@@ -28,7 +31,6 @@ public class Node<T> {
 	}
 	
 	public void expand(List<T> dataList) {
-		this.children=children;
 		for(T data : dataList) {
 			this.children.add(new Node(this,data));
 		}

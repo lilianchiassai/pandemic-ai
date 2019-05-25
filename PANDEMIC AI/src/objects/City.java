@@ -162,8 +162,7 @@ public class City implements Serializable{
 	}
 
 	public MultiDrive getMultiDrive(City destination) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.multiDriveActionMap.get(destination);
 	}
 
 	public Set<CharterFlight> getCharterFlightActionSet() {
