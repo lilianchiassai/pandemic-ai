@@ -2,6 +2,6 @@ package game;
 
 public interface Move<T extends Game> {
 
-	boolean perform(T game);
+  boolean perform(T game);
 
 }
