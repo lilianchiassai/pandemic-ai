@@ -2,15 +2,28 @@
 The project aims to create self learning artificial intelligence capable to beat the board game Pandemic.
 As i know nothing about neural network and deep learning, I will start from scratch : no library will be used to manage neural network.
 
-Current state of development : after a few months pause I have time to start on thep project again.
-The following actions will be taken before advancing further in the project :
+Next release
 - proper logging
-- maven migration to manage external libraries
-- analysis on the impact of an external library to manage Tree/Nodes
-- isolation of the game engine from the players (human or AI)
-- clean and comment code
+- comment code
 - provide use instruction
 - update README with mardown syntax
+- check MCTS algorithm implementation
+- write JUnit tests for the pandemic package
+- write JMH benchmark for critical methods
+- Remove depreciated Observer pattern
+- optimize deck creation/duplication
+- optimize gameState duplication
+- junit tests for Pandemic.getMoves method
+- provide a more optimized Pandemic.getMoves method
+
+Changelog
+2019.06.18
+ - Refactored project architecture
+ - JUnit tests in progress
+ - Add maven build process
+ - Improved algorithm to find all valuable combinations of 4 actions
+ - JMH benchmark
+ 
 
 The steps
 I Building a decent Pandemic Board game
