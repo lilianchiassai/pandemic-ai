@@ -1,7 +1,7 @@
 package pandemic.engine;
 
+import java.beans.PropertyChangeEvent;
 import java.util.HashSet;
-import java.util.Observable;
 import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,20 +25,22 @@ public class HumanPlayer extends AbstractPlayer {
   public HumanPlayer() {
     super();
   }
-
+  
   @Override
-  public void update(Observable obs, Object game) {
-    switch (((Pandemic) game).gameState.getGameStep()) {
+  public void propertyChange(PropertyChangeEvent evt) {
+    Pandemic game = (Pandemic) evt.getNewValue();
+    switch (game.gameState.getGameStep()) {
       case play:
-        action(((Pandemic) game));
+        action(game);
         break;
       case discard:
-        discard(((Pandemic) game));
+        discard(game);
         break;
       default:
         break;
     }
   }
+
 
   private void discard(Pandemic pandemic) {
     for (Hand hand : pandemic.gameState.getAllCharacterHand()) {
@@ -156,5 +158,6 @@ public class HumanPlayer extends AbstractPlayer {
       logger.info("Invalid action");
     }
   }
+
 
 }

@@ -6,6 +6,6 @@ public abstract class GameState<T extends GameProperties> {
 
   public GameState() {}
 
-  protected abstract GameState duplicate();
+  protected abstract GameState<?> duplicate();
 
 }

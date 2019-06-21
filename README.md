@@ -2,7 +2,7 @@
 The project aims to create self learning artificial intelligence capable to beat the board game Pandemic.
 As i know nothing about neural network and deep learning, I will start from scratch : no library will be used to manage neural network.
 
-Next release
+Future releases
 - proper logging
 - comment code
 - provide use instruction
@@ -10,13 +10,16 @@ Next release
 - check MCTS algorithm implementation
 - write JUnit tests for the pandemic package
 - write JMH benchmark for critical methods
-- Remove depreciated Observer pattern
 - optimize deck creation/duplication
 - optimize gameState duplication
 - junit tests for Pandemic.getMoves method
 - provide a more optimized Pandemic.getMoves method
 
 Changelog
+2019.06.20
+ - Deprecated observer pattern migrated to PropertyChangeListener
+ - JUnit tests in progress
+
 2019.06.18
  - Refactored project architecture
  - JUnit tests in progress

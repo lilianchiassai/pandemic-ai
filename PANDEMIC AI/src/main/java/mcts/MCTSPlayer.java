@@ -1,7 +1,7 @@
 package mcts;
 
+import java.beans.PropertyChangeEvent;
 import java.util.List;
-import java.util.Observable;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,10 +21,10 @@ public class MCTSPlayer extends AbstractPlayer {
     this.mcts = mcts;
     this.timeLimit = timeLimit;
   }
-
+  
   @Override
-  public void update(Observable obs, Object game) {
-    playPolicy((Game) game);
+  public void propertyChange(PropertyChangeEvent evt) {
+    playPolicy((Game) evt.getNewValue());
   }
 
   public void playPolicy(Game game) {

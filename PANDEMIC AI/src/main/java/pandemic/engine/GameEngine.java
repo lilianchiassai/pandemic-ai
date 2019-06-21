@@ -1,12 +1,11 @@
 package pandemic.engine;
 
-import java.util.Observable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import game.Engine;
 import pandemic.Pandemic;
 
-public class GameEngine extends Observable {
+public class GameEngine {
   private static Logger logger = LogManager.getLogger(GameEngine.class.getName());
 
   public static void main(String[] args) {
@@ -16,7 +15,7 @@ public class GameEngine extends Observable {
     System.out.println(b);
 
     PandemicRolloutPlayer rolloutPlayer = new PandemicRolloutPlayer();
-    Engine randomEngine = new Engine(rolloutPlayer);
+    Engine<Pandemic> randomEngine = new Engine<Pandemic>(rolloutPlayer);
     /*
      * Pandemic pandemic = new Pandemic(2,3); HumanPlayer player = new HumanPlayer();
      * 

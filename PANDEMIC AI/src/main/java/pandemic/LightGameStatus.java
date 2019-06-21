@@ -17,20 +17,20 @@ public class LightGameStatus {
 
   public LightGameStatus(State state) {
     this.state = state;
-    this.hand = new HashSet<Card>(state.getCurrentHand());
-    this.researchCenterCity = state.cityBuilt.clone();
-    this.position = state.getCurrentPlayerPosition();
-    this.actionCount = state.getCurrentActionCount();
-    this.curedDeseaseSet = state.curedDeseases.clone();
+    hand = new HashSet<Card>(state.getCurrentHand());
+    researchCenterCity = state.cityBuilt.clone();
+    position = state.getCurrentPlayerPosition();
+    actionCount = state.getCurrentActionCount();
+    curedDeseaseSet = state.curedDeseases.clone();
   }
 
   public LightGameStatus(LightGameStatus lightGameStatus) {
-    this.state = lightGameStatus.state;
-    this.hand = new HashSet<Card>(lightGameStatus.hand);
-    this.researchCenterCity = state.cityBuilt.clone();
-    this.position = lightGameStatus.position;
-    this.actionCount = lightGameStatus.actionCount;
-    this.curedDeseaseSet = state.curedDeseases.clone();
+    state = lightGameStatus.state;
+    hand = new HashSet<Card>(lightGameStatus.hand);
+    researchCenterCity = state.cityBuilt.clone();
+    position = lightGameStatus.position;
+    actionCount = lightGameStatus.actionCount;
+    curedDeseaseSet = state.curedDeseases.clone();
   }
 
   public LightGameStatus lightClone() {

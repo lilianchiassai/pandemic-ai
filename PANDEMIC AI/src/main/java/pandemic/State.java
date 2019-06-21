@@ -70,30 +70,30 @@ public class State extends GameState<Properties> {
 
   public State(Properties properties) {
     super();
-    this.gameProperties = properties;
+    gameProperties = properties;
   }
 
   public State(Builder builder) {
     super();
-    this.gameProperties = builder.gameProperties;
-    this.propagationDeck = builder.propagationDeck;
-    this.playerDeck = builder.playerDeck;
-    this.turnCount = builder.turnCount;
-    this.eclosionCount = builder.eclosionCount;
-    this.currentHand = builder.currentHand;
-    this.currentActionCount = builder.currentActionCount;
-    this.gameStep = builder.gameStep;
-    this.characterHand = builder.characterHand;
-    this.characterPositionMap = builder.characterPositionMap;
-    this.cityCubeQuantity = builder.cityCubeQuantity;
-    this.deseaseCubeReserve = builder.deseaseCubeReserve;
-    this.cityBuilt = builder.cityBuilt;
-    this.researchCenterCount = builder.researchCenterCount;
-    this.curedDeseases = builder.curedDeseases;
-    this.eradicatedDeseases = builder.eradicatedDeseases;
-    this.curedDeseaseCount = builder.curedDeseaseCount;
-    this.eradicatedDeseaseCount = builder.eradicatedDeseaseCount;
-    this.previousActionList = builder.previousActionList;
+    gameProperties = builder.gameProperties;
+    propagationDeck = builder.propagationDeck;
+    playerDeck = builder.playerDeck;
+    turnCount = builder.turnCount;
+    eclosionCount = builder.eclosionCount;
+    currentHand = builder.currentHand;
+    currentActionCount = builder.currentActionCount;
+    gameStep = builder.gameStep;
+    characterHand = builder.characterHand;
+    characterPositionMap = builder.characterPositionMap;
+    cityCubeQuantity = builder.cityCubeQuantity;
+    deseaseCubeReserve = builder.deseaseCubeReserve;
+    cityBuilt = builder.cityBuilt;
+    researchCenterCount = builder.researchCenterCount;
+    curedDeseases = builder.curedDeseases;
+    eradicatedDeseases = builder.eradicatedDeseases;
+    curedDeseaseCount = builder.curedDeseaseCount;
+    eradicatedDeseaseCount = builder.eradicatedDeseaseCount;
+    previousActionList = builder.previousActionList;
   }
 
   public static class Builder {
@@ -140,9 +140,9 @@ public class State extends GameState<Properties> {
 
       // Create players
 
-      for (PlayedCharacter character : gameProperties.characterList) {
+      for (final PlayedCharacter character : gameProperties.characterList) {
         characterPositionMap[character.id] = start;
-        Hand hand = new Hand(character);
+        final Hand hand = new Hand(character);
         characterHand[character.id] = hand;
       }
       currentHand = characterHand[0];
@@ -241,7 +241,7 @@ public class State extends GameState<Properties> {
     }
 
     public Builder deal() {
-      for (Hand hand : characterHand) {
+      for (final Hand hand : characterHand) {
         for (int i = 0; i < 6 - gameProperties.numberOfPlayers; i++) {
           hand.add((CityCard) playerDeck.draw());
         }
@@ -250,8 +250,8 @@ public class State extends GameState<Properties> {
     }
 
     public Builder split() {
-      List<Deck<PlayerCard>> deckList = playerDeck.split(gameProperties.difficulty);
-      for (Deck<PlayerCard> subdeck : deckList) {
+      final List<Deck<PlayerCard>> deckList = playerDeck.split(gameProperties.difficulty);
+      for (final Deck<PlayerCard> subdeck : deckList) {
         subdeck.addOnTop(Reserve.getInstance().epidemicCardReserve);
         subdeck.shuffle();
         playerDeck.addOnTop(subdeck);
@@ -262,7 +262,7 @@ public class State extends GameState<Properties> {
     public Builder infect() {
       for (int i = 3; i > 0; i--) {
         for (int k = 0; k < 3; k++) {
-          PropagationCard card = (PropagationCard) propagationDeck.draw();
+          final PropagationCard card = propagationDeck.draw();
           cityCubeQuantity[card.getCity().id][card.getCity().getDesease().id] += i;
           propagationDeck.discard(card);
         }
@@ -271,9 +271,9 @@ public class State extends GameState<Properties> {
     }
 
     public static Builder randomStateBuilder() {
-      Properties gameProperties =
+      final Properties gameProperties =
           new Properties(1 + (int) (Math.random() * 4), 3 + (int) (Math.random() * 3));
-      Builder builder =
+      final Builder builder =
           new Builder(gameProperties, GameUtil.getCity("Atlanta")).gameStep(Pandemic.GameStep.play);
 
       builder.turnCount((int) (Math.random() * 24 + 1));
@@ -292,10 +292,10 @@ public class State extends GameState<Properties> {
         }
       }
 
-      int researchCenterCount = builder.researchCenterCount + (int) (Math.random()
+      final int researchCenterCount = builder.researchCenterCount + (int) (Math.random()
           * (1 + gameProperties.maxResearchCenterCounter - builder.researchCenterCount));
       for (int i = 1; i < researchCenterCount; i++) {
-        int cityId = (int) (Math.random() * gameProperties.map.size());
+        final int cityId = (int) (Math.random() * gameProperties.map.size());
         if (cityId != GameUtil.getCity("Atlanta").id && !builder.cityBuilt[cityId]) {
           builder.cityBuilt[cityId] = true;
           builder.researchCenterCount++;
@@ -303,11 +303,11 @@ public class State extends GameState<Properties> {
         }
       }
 
-      for (Desease desease : gameProperties.deseaseList) {
+      for (final Desease desease : gameProperties.deseaseList) {
         int cubeInPlay = (int) (Math.random() * (gameProperties.maxCubeCount + 1));
         while (cubeInPlay > 0) {
-          City city = Reserve.getInstance().deseaseCityCardMap.get(desease).get((int) (Math.random()
-              * (Reserve.getInstance().deseaseCityCardMap.get(desease).size())));
+          final City city = Reserve.getInstance().deseaseCityCardMap.get(desease).get(
+              (int) (Math.random() * Reserve.getInstance().deseaseCityCardMap.get(desease).size()));
           if (builder.cityCubeQuantity[city.id][desease.id] < 3) {
             builder.cityCubeQuantity[city.id][desease.id]++;
             builder.deseaseCubeReserve[desease.id]++;
@@ -317,43 +317,43 @@ public class State extends GameState<Properties> {
       }
 
       for (int i = 0; i < builder.characterPositionMap.length; i++) {
-        Desease desease = gameProperties.deseaseList
-            .get((int) (Math.random() * (gameProperties.deseaseList.size())));
-        City position = Reserve.getInstance().deseaseCityCardMap.get(desease).get(
-            (int) (Math.random() * (Reserve.getInstance().deseaseCityCardMap.get(desease).size())));
+        final Desease desease = gameProperties.deseaseList
+            .get((int) (Math.random() * gameProperties.deseaseList.size()));
+        final City position = Reserve.getInstance().deseaseCityCardMap.get(desease).get(
+            (int) (Math.random() * Reserve.getInstance().deseaseCityCardMap.get(desease).size()));
         builder.characterPositionMap[i] = position;
       }
       builder
           .currentHand(builder.characterHand[(int) (Math.random() * builder.characterHand.length)]);
 
-      for (int i = 0; i < builder.characterHand.length; i++) {
-        int handSize = (int) (Math.random() * (gameProperties.maxHandSize + 1));
+      for (final Hand element : builder.characterHand) {
+        final int handSize = (int) (Math.random() * (gameProperties.maxHandSize + 1));
         int k = 0;
         while (k < handSize) {
-          CityCard card = (CityCard) builder.playerDeck.draw();
+          final CityCard card = (CityCard) builder.playerDeck.draw();
           if (card != null)
-            builder.characterHand[i].add(card);
+            element.add(card);
           k++;
         }
       }
       builder.split();
-      int epidemics = (int) (Math.random() * (builder.playerDeck.getTotalEpidemic() + 1));
+      final int epidemics = (int) (Math.random() * (builder.playerDeck.getTotalEpidemic() + 1));
       int epidemicCounter = 0;
       while (epidemicCounter < epidemics) {
-        PlayerCard card = builder.playerDeck.draw();
+        final PlayerCard card = builder.playerDeck.draw();
         builder.playerDeck.discard(card);
         if (card instanceof EpidemicCard)
           epidemicCounter++;
       }
-      int discardedCards = epidemics == 0 ? 0
+      final int discardedCards = epidemics == 0 ? 0
           : (int) (Math.random() * (builder.playerDeck.getSubdeckSize(epidemics - 1) + 1));
       for (int i = 0; i < discardedCards; i++) {
-        PlayerCard card = builder.playerDeck.draw();
+        final PlayerCard card = builder.playerDeck.draw();
         builder.playerDeck.discard(card);
         if (card instanceof EpidemicCard)
           epidemicCounter++;
       }
-      int propagationDiscarded = (int) (Math.random() * (builder.propagationDeck.size() + 1)
+      final int propagationDiscarded = (int) (Math.random() * (builder.propagationDeck.size() + 1)
           * (gameProperties.propagationSpeed[builder.playerDeck.getEpidemicCounter()]
               - gameProperties.propagationSpeed[0])
           / gameProperties.propagationSpeed[gameProperties.propagationSpeed.length - 1]);
@@ -380,36 +380,35 @@ public class State extends GameState<Properties> {
 
   // Getters
   public PlayerDeck getPlayerDeck() {
-    return this.playerDeck;
+    return playerDeck;
   }
 
   protected int getPropagationSpeed() {
-    return gameProperties.getPropagationSpeed(this.playerDeck.getEpidemicCounter());
+    return gameProperties.getPropagationSpeed(playerDeck.getEpidemicCounter());
   }
 
   public Pandemic.GameStep getGameStep() {
-    return this.gameStep;
+    return gameStep;
   }
 
   public PlayedCharacter getCurrentPlayer() {
-    return this.currentHand.getCharacter();
+    return currentHand.getCharacter();
   }
 
   public Hand getCurrentHand() {
-    return this.currentHand;
+    return currentHand;
   }
 
   public City getCurrentPlayerPosition() {
-    return this.characterPositionMap[currentHand.getCharacter().id];
+    return characterPositionMap[currentHand.getCharacter().id];
   }
 
   protected int getTurnCount() {
-    return this.turnCount;
+    return turnCount;
   }
 
   public City getCharacterPosition(PlayedCharacter character) {
-    return character.id < this.characterPositionMap.length ? this.characterPositionMap[character.id]
-        : null;
+    return character.id < characterPositionMap.length ? characterPositionMap[character.id] : null;
   }
 
   public void nextPlayer() {
@@ -423,37 +422,37 @@ public class State extends GameState<Properties> {
   }
 
   public void increaseEpidemicCounter() {
-    this.playerDeck.increaseEpidemicCounter();
+    playerDeck.increaseEpidemicCounter();
   }
 
   public void increaseTurnCounter() {
-    this.turnCount++;
+    turnCount++;
   }
 
   public Hand getCharacterHand(PlayedCharacter character) {
-    return this.characterHand[character.id];
+    return characterHand[character.id];
   }
 
   public int getCityCubeCount(City city, Desease desease) {
-    return this.cityCubeQuantity[city.id][desease.id];
+    return cityCubeQuantity[city.id][desease.id];
   }
 
   public int getCubeCurrentReserve(Desease desease) {
-    return this.deseaseCubeReserve[desease.id];
+    return deseaseCubeReserve[desease.id];
   }
 
   public int getCurrentActionCount() {
-    return this.currentActionCount;
+    return currentActionCount;
   }
 
   public Hand[] getAllCharacterHand() {
-    return this.characterHand;
+    return characterHand;
   }
 
   public Set<City> getResearchCenters() {
-    HashSet<City> result = new HashSet<City>();
-    for (City city : gameProperties.map) {
-      if (this.cityBuilt[city.id]) {
+    final HashSet<City> result = new HashSet<City>();
+    for (final City city : gameProperties.map) {
+      if (cityBuilt[city.id]) {
         result.add(city);
       }
     }
@@ -461,75 +460,75 @@ public class State extends GameState<Properties> {
   }
 
   public int getResearchCenterCount() {
-    return this.researchCenterCount;
+    return researchCenterCount;
   }
 
   public int getEpidemicCount() {
-    return this.playerDeck.getEpidemicCounter();
+    return playerDeck.getEpidemicCounter();
   }
 
   public LinkedList<GameAction> getPreviousActionList() {
-    return this.previousActionList;
+    return previousActionList;
   }
 
   public boolean hasResearchCenter(City city) {
-    return this.cityBuilt[city.id];
+    return cityBuilt[city.id];
   }
 
   public boolean isCubeReserveFull(Desease desease) {
-    return this.deseaseCubeReserve[desease.id] == 0;
+    return deseaseCubeReserve[desease.id] == 0;
   }
 
   public boolean isCured(Desease desease) {
-    return this.curedDeseases[desease.id];
+    return curedDeseases[desease.id];
   }
 
   public boolean isEradicated(Desease desease) {
-    return this.eradicatedDeseases[desease.id];
+    return eradicatedDeseases[desease.id];
   }
 
   public boolean setCharacterPosition(PlayedCharacter currentPlayer, City destination) {
-    this.characterPositionMap[currentPlayer.id] = destination;
+    characterPositionMap[currentPlayer.id] = destination;
     return true;
   }
 
   public void addToActionList(GameAction gameAction) {
-    this.previousActionList.add(gameAction);
+    previousActionList.add(gameAction);
   }
 
   public boolean removeFromActionList(GameAction gameAction) {
-    if (this.previousActionList.getLast() == gameAction) {
-      return this.previousActionList.removeLast() != null;
+    if (previousActionList.getLast() == gameAction) {
+      return previousActionList.removeLast() != null;
     }
     return false;
   }
 
   public boolean eradicateDesease(Desease desease) {
     eradicatedDeseaseCount++;
-    return this.eradicatedDeseases[desease.id] = Boolean.TRUE;
+    return eradicatedDeseases[desease.id] = Boolean.TRUE;
   }
 
   public boolean unEradicateDesease(Desease desease) {
     eradicatedDeseaseCount--;
-    return this.eradicatedDeseases[desease.id] = Boolean.FALSE;
+    return eradicatedDeseases[desease.id] = Boolean.FALSE;
   }
 
   public boolean cureDesease(Desease desease) {
     curedDeseaseCount++;
-    return this.curedDeseases[desease.id] = Boolean.TRUE;
+    return curedDeseases[desease.id] = Boolean.TRUE;
   }
 
   public boolean unCureDesease(Desease desease) {
     curedDeseaseCount--;
-    return this.curedDeseases[desease.id] = Boolean.FALSE;
+    return curedDeseases[desease.id] = Boolean.FALSE;
   }
 
   public void decreaseCurrentActionCount(int i) {
-    this.currentActionCount = currentActionCount - i;
+    currentActionCount = currentActionCount - i;
   }
 
   public void increaseCurrentActionCount(int actionCost) {
-    this.currentActionCount += actionCost;
+    currentActionCount += actionCost;
   }
 
   public boolean addResearchCenter(City city) {
@@ -580,40 +579,41 @@ public class State extends GameState<Properties> {
     }
   }
 
+  @Override
   public State duplicate() {
-    State state = new State(this.gameProperties);
-    state.previousActionList = new ActionSerie(this.previousActionList);
-    state.value = this.value;
+    final State state = new State(gameProperties);
+    state.previousActionList = new ActionSerie(previousActionList);
+    state.value = value;
 
-    state.turnCount = this.turnCount;
-    state.eclosionCount = this.eclosionCount;
-    state.currentActionCount = this.currentActionCount;
-    state.gameStep = this.gameStep;
-    state.curedDeseaseCount = this.curedDeseaseCount;
-    state.researchCenterCount = this.researchCenterCount;
-    state.eradicatedDeseaseCount = this.eradicatedDeseaseCount;
+    state.turnCount = turnCount;
+    state.eclosionCount = eclosionCount;
+    state.currentActionCount = currentActionCount;
+    state.gameStep = gameStep;
+    state.curedDeseaseCount = curedDeseaseCount;
+    state.researchCenterCount = researchCenterCount;
+    state.eradicatedDeseaseCount = eradicatedDeseaseCount;
 
     state.propagationDeck = propagationDeck.duplicate();
     state.playerDeck = playerDeck.duplicate();
 
     state.characterHand = new Hand[gameProperties.numberOfPlayers];
-    for (Hand hand : this.characterHand) {
-      Hand handClone = hand.duplicate();
+    for (final Hand hand : characterHand) {
+      final Hand handClone = hand.duplicate();
       state.characterHand[handClone.getCharacter().id] = handClone;
       if (hand == currentHand) {
         state.currentHand = handClone;
       }
     }
 
-    state.characterPositionMap = this.characterPositionMap.clone();
+    state.characterPositionMap = characterPositionMap.clone();
     state.cityCubeQuantity = new int[48][4];
-    for (int i = 0; i < this.cityCubeQuantity.length; i++) {
-      state.cityCubeQuantity[i] = this.cityCubeQuantity[i].clone();
+    for (int i = 0; i < cityCubeQuantity.length; i++) {
+      state.cityCubeQuantity[i] = cityCubeQuantity[i].clone();
     }
-    state.cityBuilt = this.cityBuilt.clone();
-    state.deseaseCubeReserve = this.deseaseCubeReserve.clone();
-    state.curedDeseases = this.curedDeseases.clone();
-    state.eradicatedDeseases = this.eradicatedDeseases.clone();
+    state.cityBuilt = cityBuilt.clone();
+    state.deseaseCubeReserve = deseaseCubeReserve.clone();
+    state.curedDeseases = curedDeseases.clone();
+    state.eradicatedDeseases = eradicatedDeseases.clone();
     return state;
   }
 
@@ -622,100 +622,99 @@ public class State extends GameState<Properties> {
   }
 
   public int updateValue() {
-    this.value = 0;
-    this.value += (gameProperties.maxEclosionCounter - this.eclosionCount) * 500;
-    this.value += 300 * gameProperties.map.size();
-    for (Card propagationCard : this.propagationDeck.getDiscardPile()) {
-      switch (this.getCityCubeCount(((PropagationCard) propagationCard).getCity(),
+    value = 0;
+    value += (gameProperties.maxEclosionCounter - eclosionCount) * 500;
+    value += 300 * gameProperties.map.size();
+    for (final Card propagationCard : propagationDeck.getDiscardPile()) {
+      switch (getCityCubeCount(((PropagationCard) propagationCard).getCity(),
           ((PropagationCard) propagationCard).getCity().getDesease())) {
         case 0:
           break;
         case 1:
-          this.value -= 40;
+          value -= 40;
           break;
         case 2:
-          this.value -= 80;
+          value -= 80;
           break;
         case 3:
-          this.value -= 160;
+          value -= 160;
           break;
         default:
-          this.value -= 300;
+          value -= 300;
           break;
       }
     }
 
-    for (LinkedList<PropagationCard> memory : this.propagationDeck.getMemories()) {
-      for (PropagationCard memoryCard : memory) {
-        switch (this.getCityCubeCount(((PropagationCard) memoryCard).getCity(),
-            ((PropagationCard) memoryCard).getCity().getDesease())) {
+    for (final LinkedList<PropagationCard> memory : propagationDeck.getMemories()) {
+      for (final PropagationCard memoryCard : memory) {
+        switch (getCityCubeCount(memoryCard.getCity(), memoryCard.getCity().getDesease())) {
           case 0:
             break;
           case 1:
-            this.value -= 50;
+            value -= 50;
             break;
           case 2:
-            this.value -= 100;
+            value -= 100;
             break;
           case 3:
-            this.value -= 300;
+            value -= 300;
             break;
           default:
-            this.value -= 300;
+            value -= 300;
             break;
         }
       }
     }
 
-    this.value += 1000;
-    for (Desease desease : gameProperties.deseaseList) {
-      this.value -= Math.max(this.getCubeCurrentReserve(desease) * 50, 250);
+    value += 1000;
+    for (final Desease desease : gameProperties.deseaseList) {
+      value -= Math.max(getCubeCurrentReserve(desease) * 50, 250);
     }
-    this.value += 1000;
+    value += 1000;
     int neighbourResearchCenter = 0;
-    for (City city : gameProperties.map) {
-      if (this.cityBuilt[city.id]) {
+    for (final City city : gameProperties.map) {
+      if (cityBuilt[city.id]) {
         neighbourResearchCenter = 0;
-        for (City neighbour : city.getNeighbourSet()) {
-          if (this.cityBuilt[neighbour.id]) {
+        for (final City neighbour : city.getNeighbourSet()) {
+          if (cityBuilt[neighbour.id]) {
             neighbourResearchCenter++;
           }
         }
-        this.value += 200 / (neighbourResearchCenter + 1);
+        value += 200 / (neighbourResearchCenter + 1);
       }
     }
-    this.value -= gameProperties.maxResearchCenterCounter - this.researchCenterCount * 200;
+    value -= gameProperties.maxResearchCenterCounter - researchCenterCount * 200;
 
-    this.value += this.curedDeseaseCount * 1000;
-    this.value += this.eradicatedDeseaseCount * 250;
+    value += curedDeseaseCount * 1000;
+    value += eradicatedDeseaseCount * 250;
 
-    for (Desease desease : gameProperties.deseaseList) {
+    for (final Desease desease : gameProperties.deseaseList) {
       int max = 0;
-      if (!this.curedDeseases[desease.id]) {
-        for (Hand hand : this.characterHand) {
-          int current = hand.stream().filter(GameUtil.getCityCardPredicate(desease))
+      if (!curedDeseases[desease.id]) {
+        for (final Hand hand : characterHand) {
+          final int current = hand.stream().filter(GameUtil.getCityCardPredicate(desease))
               .collect(Collectors.toSet()).size();
           max = current > max ? current : max;
         }
       }
-      this.value += 300 * max;
+      value += 300 * max;
     }
-    this.value += this.getCurrentCharacterPositionValue() * 10 / 10;
-    return this.value;
+    value += getCurrentCharacterPositionValue() * 10 / 10;
+    return value;
   }
 
   private double getCurrentCharacterPositionValue() {
     double value = 0;
-    for (City city : this.getCurrentPlayerPosition().getNeighbourSet()) {
-      if (this.getCityCubeCount(city, city.getDesease()) > 0) {
+    for (final City city : getCurrentPlayerPosition().getNeighbourSet()) {
+      if (getCityCubeCount(city, city.getDesease()) > 0) {
         value++;
       } else {
-        for (City neighbour : city.getNeighbourSet()) {
-          if (this.getCityCubeCount(neighbour, neighbour.getDesease()) > 0) {
+        for (final City neighbour : city.getNeighbourSet()) {
+          if (getCityCubeCount(neighbour, neighbour.getDesease()) > 0) {
             value += 0.5;
           } else {
-            for (City neighbour2 : neighbour.getNeighbourSet()) {
-              if (this.getCityCubeCount(neighbour2, neighbour2.getDesease()) > 0) {
+            for (final City neighbour2 : neighbour.getNeighbourSet()) {
+              if (getCityCubeCount(neighbour2, neighbour2.getDesease()) > 0) {
                 value += 0.2;
               }
             }

@@ -1,7 +1,7 @@
 package game;
 
-import java.util.Observer;
+import java.beans.PropertyChangeListener;
 
-public interface Player extends Observer {
+public interface Player extends PropertyChangeListener {
 
 }

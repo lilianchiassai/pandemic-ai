@@ -1,14 +1,18 @@
 package game;
 
-import java.util.Observable;
+import java.beans.PropertyChangeSupport;
 
-public class Engine extends Observable {
+public class Engine<T extends Game> {
+  
+  final private PropertyChangeSupport support;
+  final private String fireEvent="";
 
   public Engine(Player player) {
-    this.addObserver(player);
+    this.support = new PropertyChangeSupport(this);
+    this.support.addPropertyChangeListener(player);
   }
 
-  public Game run(Game game) {
+  public T run(T game) {
     while (!game.isOver()) {
       if (game.update()) {
         notifyPlayers(game);
@@ -16,9 +20,8 @@ public class Engine extends Observable {
     }
     return game;
   }
-
-  public void notifyPlayers(Game game) {
-    this.setChanged();
-    notifyObservers(game);
+  
+  public void notifyPlayers(T game) {
+    support.firePropertyChange(fireEvent, null, game);
   }
 }

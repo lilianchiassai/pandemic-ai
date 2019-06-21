@@ -36,7 +36,7 @@ public class GameUtil {
 
   public static void log(Pandemic pandemic, Logger logger, String message) {
     if (pandemic.isDebugLog()) {
-      logger.debug(message);
+      //logger.debug(message);
     } else {
       logger.info(message);
     }

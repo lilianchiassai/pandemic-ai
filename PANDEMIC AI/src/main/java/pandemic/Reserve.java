@@ -24,20 +24,20 @@ public final class Reserve {
   Set<PlayerCard> playerCardReserve;
   Set<PropagationCard> propagationCardReserve;
   EpidemicCard epidemicCardReserve;
-  private LinkedList<PlayedCharacter> characterReserve;
-  private ArrayList<Desease> deseaseSet;
-  private Map<String, City> map;
+  private final LinkedList<PlayedCharacter> characterReserve;
+  private final ArrayList<Desease> deseaseSet;
+  private final Map<String, City> map;
   Map<Desease, ArrayList<City>> deseaseCityCardMap;
 
 
   private Reserve() {
 
     // Instantiate deseases
-    logger.info("Loading deseases.");
-    Desease yellow = new Desease("Yellow");
-    Desease red = new Desease("Red");
-    Desease blue = new Desease("Blue");
-    Desease black = new Desease("Black");
+    Reserve.logger.info("Loading deseases.");
+    final Desease yellow = new Desease("Yellow");
+    final Desease red = new Desease("Red");
+    final Desease blue = new Desease("Blue");
+    final Desease black = new Desease("Black");
     deseaseSet = new ArrayList<Desease>();
     getDeseaseSet().add(yellow);
     getDeseaseSet().add(red);
@@ -46,58 +46,58 @@ public final class Reserve {
 
     map = new HashMap<String, City>();
 
-    logger.info("Creating city network.");
-    City sanFrancisco = new City("San Francisco", blue);
-    City chicago = new City("Chicago", blue);
-    City atlanta = new City("Atlanta", blue);
-    City montreal = new City("Montreal", blue);
-    City washington = new City("Washington", blue);
-    City newYork = new City("New York", blue);
-    City madrid = new City("Madrid", blue);
-    City london = new City("London", blue);
-    City paris = new City("Paris", blue);
-    City essen = new City("Essen", blue);
-    City milan = new City("Milan", blue);
-    City saintPetersbourg = new City("Saint Petersbourg", blue);
+    Reserve.logger.info("Creating city network.");
+    final City sanFrancisco = new City("San Francisco", blue);
+    final City chicago = new City("Chicago", blue);
+    final City atlanta = new City("Atlanta", blue);
+    final City montreal = new City("Montreal", blue);
+    final City washington = new City("Washington", blue);
+    final City newYork = new City("New York", blue);
+    final City madrid = new City("Madrid", blue);
+    final City london = new City("London", blue);
+    final City paris = new City("Paris", blue);
+    final City essen = new City("Essen", blue);
+    final City milan = new City("Milan", blue);
+    final City saintPetersbourg = new City("Saint Petersbourg", blue);
 
-    City losAngeles = new City("Los Angeles", yellow);
-    City mexicoCity = new City("Mexico City", yellow);
-    City miami = new City("Miami", yellow);
-    City bogota = new City("Bogota", yellow);
-    City lima = new City("Lima", yellow);
-    City santiago = new City("Santiago", yellow);
-    City buenosAires = new City("Buenos Aires", yellow);
-    City saoPaulo = new City("Sao Paulo", yellow);
-    City lagos = new City("Lagos", yellow);
-    City khinshasa = new City("Khinshasa", yellow);
-    City johannesburg = new City("Johannesburg", yellow);
-    City khartoum = new City("Khartoum", yellow);
+    final City losAngeles = new City("Los Angeles", yellow);
+    final City mexicoCity = new City("Mexico City", yellow);
+    final City miami = new City("Miami", yellow);
+    final City bogota = new City("Bogota", yellow);
+    final City lima = new City("Lima", yellow);
+    final City santiago = new City("Santiago", yellow);
+    final City buenosAires = new City("Buenos Aires", yellow);
+    final City saoPaulo = new City("Sao Paulo", yellow);
+    final City lagos = new City("Lagos", yellow);
+    final City khinshasa = new City("Khinshasa", yellow);
+    final City johannesburg = new City("Johannesburg", yellow);
+    final City khartoum = new City("Khartoum", yellow);
 
-    City algers = new City("Algers", black);
-    City cairo = new City("Cairo", black);
-    City istanbul = new City("Istanbul", black);
-    City moscow = new City("Moscow", black);
-    City baghdad = new City("Baghdad", black);
-    City ryadh = new City("Ryadh", black);
-    City teheran = new City("Teheran", black);
-    City karachi = new City("Karachi", black);
-    City mumbai = new City("Mumbai", black);
-    City delhi = new City("Delhi", black);
-    City chennai = new City("Chennai", black);
-    City kolkata = new City("Kolkata", black);
+    final City algers = new City("Algers", black);
+    final City cairo = new City("Cairo", black);
+    final City istanbul = new City("Istanbul", black);
+    final City moscow = new City("Moscow", black);
+    final City baghdad = new City("Baghdad", black);
+    final City ryadh = new City("Ryadh", black);
+    final City teheran = new City("Teheran", black);
+    final City karachi = new City("Karachi", black);
+    final City mumbai = new City("Mumbai", black);
+    final City delhi = new City("Delhi", black);
+    final City chennai = new City("Chennai", black);
+    final City kolkata = new City("Kolkata", black);
 
-    City bangkok = new City("Bangkok", red);
-    City jakarta = new City("Jakarta", red);
-    City hoChiMinhCity = new City("Ho Chi Minh City", red);
-    City hongKong = new City("Hong Kong", red);
-    City shangai = new City("Shangai", red);
-    City beijing = new City("Beijing", red);
-    City seoul = new City("Seoul", red);
-    City tokyo = new City("Tokyo", red);
-    City osaka = new City("Osaka", red);
-    City taipei = new City("Taipei", red);
-    City manila = new City("Manila", red);
-    City sydney = new City("Sydney", red);
+    final City bangkok = new City("Bangkok", red);
+    final City jakarta = new City("Jakarta", red);
+    final City hoChiMinhCity = new City("Ho Chi Minh City", red);
+    final City hongKong = new City("Hong Kong", red);
+    final City shangai = new City("Shangai", red);
+    final City beijing = new City("Beijing", red);
+    final City seoul = new City("Seoul", red);
+    final City tokyo = new City("Tokyo", red);
+    final City osaka = new City("Osaka", red);
+    final City taipei = new City("Taipei", red);
+    final City manila = new City("Manila", red);
+    final City sydney = new City("Sydney", red);
 
     // Create map
     getMap().put(sanFrancisco.getName(), sanFrancisco);
@@ -344,50 +344,50 @@ public final class Reserve {
 
 
     // Instantiate Reserve
-    logger.info("Building reserve.");
+    Reserve.logger.info("Building reserve.");
     characterReserve = new LinkedList<PlayedCharacter>();
     propagationCardReserve = new HashSet<PropagationCard>();
     playerCardReserve = new HashSet<PlayerCard>();
 
 
     // Create Cards
-    logger.info("Creating Cards");
-    for (City city : getMap().values()) {
+    Reserve.logger.info("Creating Cards");
+    for (final City city : getMap().values()) {
       // Create propagation card
       propagationCardReserve.add(new PropagationCard(city));
       playerCardReserve.add(new CityCard(city));
     }
 
     deseaseCityCardMap = new HashMap<Desease, ArrayList<City>>();
-    for (Desease desease : getDeseaseSet()) {
-      ArrayList<City> cityCardSet = new ArrayList<City>();
+    for (final Desease desease : getDeseaseSet()) {
+      final ArrayList<City> cityCardSet = new ArrayList<City>();
       deseaseCityCardMap.put(desease, cityCardSet);
     }
-    for (PlayerCard playerCard : playerCardReserve) {
+    for (final PlayerCard playerCard : playerCardReserve) {
       if (playerCard instanceof CityCard) {
         deseaseCityCardMap.get(((CityCard) playerCard).getCity().getDesease())
-            .add((((CityCard) playerCard)).getCity());
+            .add(((CityCard) playerCard).getCity());
       }
     }
     epidemicCardReserve = new EpidemicCard();
 
     // Updating map
     // Init distances
-    for (City city : getMap().values()) {
+    for (final City city : getMap().values()) {
       city.initDistances(getMap());
     }
     // Init city actions
-    for (City city : getMap().values()) {
+    for (final City city : getMap().values()) {
       city.initGameActions(getMap(), getDeseaseSet(), getCharacterList(4));
     }
 
   }
 
   public static Reserve getInstance() {
-    if (instance == null) {
-      instance = new Reserve();
+    if (Reserve.instance == null) {
+      Reserve.instance = new Reserve();
     }
-    return instance;
+    return Reserve.instance;
   }
 
   public ArrayList<Desease> getDeseaseSet() {
@@ -404,7 +404,7 @@ public final class Reserve {
 
   public ArrayList<PlayedCharacter> getCharacterList(int numberOfPlayers) {
     if (characterReserve.size() < numberOfPlayers) {
-      int toAdd = numberOfPlayers - characterReserve.size();
+      final int toAdd = numberOfPlayers - characterReserve.size();
       for (int i = 0; i < toAdd; i++) {
         characterReserve.add(new PlayedCharacter("Player " + (i + 1)));
       }
@@ -413,10 +413,10 @@ public final class Reserve {
   }
 
   public EpidemicCard getEpidemicCardReserve() {
-    return this.epidemicCardReserve;
+    return epidemicCardReserve;
   }
 
   public Set<PlayerCard> getPlayerCardReserve() {
-    return this.playerCardReserve;
+    return playerCardReserve;
   }
 }

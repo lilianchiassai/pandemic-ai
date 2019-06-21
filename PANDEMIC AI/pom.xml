@@ -6,7 +6,9 @@
 	<artifactId>PANDEMICAI</artifactId>
 	<version>0.0.1</version>
 	<name>PANDEMICAI</name>
-
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 	<packaging>jar</packaging>
 
 	<dependencies>
@@ -72,6 +74,7 @@
 			<plugin>
 <groupId>net.revelc.code.formatter</groupId>
 <artifactId>formatter-maven-plugin</artifactId>
+<version>2.10.0</version>
 <executions>
     <execution>
         <goals>

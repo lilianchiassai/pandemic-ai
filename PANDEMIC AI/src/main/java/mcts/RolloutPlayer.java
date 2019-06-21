@@ -1,5 +1,6 @@
 package mcts;
 
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Observable;
 import game.AbstractPlayer;
@@ -11,8 +12,8 @@ public class RolloutPlayer extends AbstractPlayer {
   public RolloutPlayer() {}
 
   @Override
-  public void update(Observable engine, Object game) {
-    rolloutPolicy((Game) game);
+  public void propertyChange(PropertyChangeEvent evt) {
+    rolloutPolicy((Game) evt.getNewValue());
   }
 
   public void rolloutPolicy(Game game) {

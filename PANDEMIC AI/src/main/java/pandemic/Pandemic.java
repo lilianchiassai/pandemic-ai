@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import game.AbstractGame;
@@ -30,17 +31,18 @@ public class Pandemic extends AbstractGame<State> {
   boolean debugLog;
   Set<City> alreadyEcloded;
   City eclosionStart;
+  ToIntFunction<Pandemic> gameOver;
 
   public Pandemic(State state) {
-    this.gameState = state;
-    this.debugLog = false;
-    this.alreadyEcloded = new HashSet<City>();
+    gameState = state;
+    debugLog = false;
+    alreadyEcloded = new HashSet<City>();
   }
 
   public Pandemic(int numberOfPlayers, int difficulty) {
-    this.debugLog = false;
-    this.alreadyEcloded = new HashSet<City>();
-    this.gameState =
+    debugLog = false;
+    alreadyEcloded = new HashSet<City>();
+    gameState =
         State.Builder.startStateBuilder(new Properties(numberOfPlayers, difficulty)).build();
   }
 
@@ -60,16 +62,16 @@ public class Pandemic extends AbstractGame<State> {
 
   public void infect(City city, int strength, Desease desease) {
     // Check if eradicated
-    if (!this.gameState.isEradicated(desease)) {
+    if (!gameState.isEradicated(desease)) {
       int cubeCounter = 0;
       while (cubeCounter < strength) {
-        if (this.gameState.getCityCubeCount(city, desease) == 3) {
+        if (gameState.getCityCubeCount(city, desease) == 3) {
           eclosion(city, desease);
         } else {
-          GameUtil.log(this, logger,
+          GameUtil.log(this, Pandemic.logger,
               "The " + desease.getName() + " desease spreads in " + city.getName() + ".");
-          if (!this.gameState.addCube(city, desease)) {
-            GameUtil.log(this, logger, "No more " + desease.getName() + " cubes to add.");
+          if (!gameState.addCube(city, desease)) {
+            GameUtil.log(this, Pandemic.logger, "No more " + desease.getName() + " cubes to add.");
             lose();
           }
         }
@@ -79,147 +81,112 @@ public class Pandemic extends AbstractGame<State> {
   }
 
   private void eclosion(City city, Desease desease) {
-    if (this.alreadyEcloded.contains(city)) {
+    if (alreadyEcloded.contains(city)) {
       // do nothing
     } else {
-      GameUtil.log(this, logger, "Eclosion in " + city.getName() + ".");
-      this.gameState.increaseEclosionCounter();
-      if (this.gameState.eclosionCount > this.gameState.gameProperties.maxEclosionCounter) {
-        GameUtil.log(this, logger, "Too many eclosions !");
+      GameUtil.log(this, Pandemic.logger, "Eclosion in " + city.getName() + ".");
+      gameState.increaseEclosionCounter();
+      if (gameState.eclosionCount > gameState.gameProperties.maxEclosionCounter) {
+        GameUtil.log(this, Pandemic.logger, "Too many eclosions !");
         lose();
       } else {
-        if (this.alreadyEcloded.size() == 0) {
-          this.eclosionStart = city;
+        if (alreadyEcloded.size() == 0) {
+          eclosionStart = city;
         }
-        this.alreadyEcloded.add(city);
-        for (City target : city.getNeighbourSet()) {
+        alreadyEcloded.add(city);
+        for (final City target : city.getNeighbourSet()) {
           infect(target, 1, desease);
         }
       }
     }
-    if (this.eclosionStart == city) {
-      this.eclosionStart = null;
-      this.alreadyEcloded.clear();
+    if (eclosionStart == city) {
+      eclosionStart = null;
+      alreadyEcloded.clear();
     }
 
   }
 
   public PlayedCharacter nextPlayer() {
-    this.gameState.increaseTurnCounter();
-    this.gameState.nextPlayer();
-    GameUtil.log(this, logger, "Turn " + this.gameState.turnCount);
-    GameUtil.log(this, logger, this.gameState.getCurrentPlayer().getName()
-        + " starts a new turn in " + this.gameState.getCurrentPlayerPosition().getName() + ".");
-    GameUtil.log(this, logger,
-        "There are " + this.gameState.getCityCubeCount(this.gameState.getCurrentPlayerPosition(),
-            this.gameState.getCurrentPlayerPosition().getDesease()) + " cubes.");
-    GameUtil.log(this, logger, "Player hand " + this.gameState.getCurrentHand().toString() + ".");
-    return this.gameState.getCurrentPlayer();
+    gameState.increaseTurnCounter();
+    gameState.nextPlayer();
+    GameUtil.log(this, Pandemic.logger, "Turn " + gameState.turnCount);
+    GameUtil.log(this, Pandemic.logger, gameState.getCurrentPlayer().getName()
+        + " starts a new turn in " + gameState.getCurrentPlayerPosition().getName() + ".");
+    GameUtil.log(this, Pandemic.logger,
+        "There are " + gameState.getCityCubeCount(gameState.getCurrentPlayerPosition(),
+            gameState.getCurrentPlayerPosition().getDesease()) + " cubes.");
+    GameUtil.log(this, Pandemic.logger,
+        "Player hand " + gameState.getCurrentHand().toString() + ".");
+    return gameState.getCurrentPlayer();
   }
 
   public void drawEndTurn() {
     // current Player draws
-    GameUtil.log(this, logger, this.gameState.getCurrentPlayer().getName() + " draws.");
+    GameUtil.log(this, Pandemic.logger, gameState.getCurrentPlayer().getName() + " draws.");
     for (int i = 0; i < 2; i++) {
-      PlayerCard card = (PlayerCard) this.gameState.getPlayerDeck().draw();
+      final PlayerCard card = gameState.getPlayerDeck().draw();
       if (card == null) {
         // lose(gameStatus);
-        GameUtil.log(this, logger, "No more player card.");
-        this.setStep(GameStep.win);
+        GameUtil.log(this, Pandemic.logger, "No more player card.");
+        setStep(GameStep.win);
       } else if (card instanceof EpidemicCard) {
         // do Epidemy
-        GameUtil.log(this, logger, this.gameState.getCurrentPlayer().getName() + " draws the "
-            + (this.gameState.getEpidemicCount() + 1) + "th Epidemic.");
-        PropagationCard infectedCard =
-            (PropagationCard) this.gameState.propagationDeck.drawBottomCard();
+        GameUtil.log(this, Pandemic.logger, gameState.getCurrentPlayer().getName() + " draws the "
+            + (gameState.getEpidemicCount() + 1) + "th Epidemic.");
+        final PropagationCard infectedCard = gameState.propagationDeck.drawBottomCard();
         if (infectedCard == null) {
-          GameUtil.log(this, logger, "No propagation card");
+          GameUtil.log(this, Pandemic.logger, "No propagation card");
           lose();
         } else {
-          this.gameState.propagationDeck.discard(infectedCard);
+          gameState.propagationDeck.discard(infectedCard);
           infect(infectedCard.getCity(), 3);
-          this.gameState.increaseEpidemicCounter();
-          this.gameState.propagationDeck
-              .addOnTop(this.gameState.propagationDeck.getDiscardPile().shuffle());
+          gameState.increaseEpidemicCounter();
+          gameState.propagationDeck.addOnTop(gameState.propagationDeck.getDiscardPile().shuffle());
         }
       } else {
-        this.gameState.getCurrentHand().add((CityCard) card);
+        gameState.getCurrentHand().add((CityCard) card);
       }
     }
   }
 
   public void propagationEndTurn() {
     // propagation
-    GameUtil.log(this, logger, "Propagation");
-    for (int i = 0; i < this.gameState.getPropagationSpeed(); i++) {
-      PropagationCard card = (PropagationCard) this.gameState.propagationDeck.draw();
+    GameUtil.log(this, Pandemic.logger, "Propagation");
+    for (int i = 0; i < gameState.getPropagationSpeed(); i++) {
+      final PropagationCard card = gameState.propagationDeck.draw();
       if (card == null) {
-        GameUtil.log(this, logger, "No propagation card");
+        GameUtil.log(this, Pandemic.logger, "No propagation card");
         lose();
       } else {
         infect(card.getCity());
-        this.gameState.propagationDeck.discard(card);
+        gameState.propagationDeck.discard(card);
       }
     }
   }
 
   public void lose() {
-    this.setStep(Pandemic.GameStep.lose);
+    setStep(Pandemic.GameStep.lose);
   }
 
   public boolean giveCard(PlayedCharacter character1, PlayedCharacter character2, CityCard card) {
-    this.gameState.getCharacterHand(character1).remove(card);
-    this.gameState.getCharacterHand(character2).add(card);
+    gameState.getCharacterHand(character1).remove(card);
+    gameState.getCharacterHand(character2).add(card);
     return true;
   }
 
-  public void updateStatus() {
-    // TODO refactoring previous code to use a step and status manager
-    switch (this.gameState.gameStep) {
-      case play:
-        if (!canPlay()) {
-          this.setStep(Pandemic.GameStep.draw);
-        }
-        break;
-      case draw:
-        this.drawEndTurn();
-        this.setStep(Pandemic.GameStep.discard);
-        break;
-      case discard:
-        if (mustDiscard()) {
-          this.setStep(Pandemic.GameStep.propagate);
-        }
-        break;
-      case propagate:
-        propagationEndTurn();
-        nextPlayer();
-        this.setStep(Pandemic.GameStep.play);
-        break;
-      default:
-        break;
-    }
-  }
-
   public boolean findCure(Desease desease) {
-    this.gameState.cureDesease(desease);
-    if (this.gameState.curedDeseaseCount == this.gameState.gameProperties.deseaseList.size() - 2) {
-      this.setStep(GameStep.win);
-    }
+    gameState.cureDesease(desease);
     return true;
   }
 
   public boolean cancelCure(Desease desease) {
-    this.gameState.unCureDesease(desease);
+    gameState.unCureDesease(desease);
     uneradicate(desease);
-    if (this.gameState.gameStep == GameStep.win) {
-      this.setStep(GameStep.play);
-    }
-
     return true;
   }
 
   public boolean checkEradicated(Desease desease) {
-    if (this.gameState.isCubeReserveFull(desease) && this.gameState.isCured(desease)) {
+    if (gameState.isCubeReserveFull(desease) && gameState.isCured(desease)) {
       return eradicate(desease);
     }
     uneradicate(desease);
@@ -227,37 +194,38 @@ public class Pandemic extends AbstractGame<State> {
   }
 
   private boolean eradicate(Desease desease) {
-    GameUtil.log(this, logger, "Desease " + desease.getName() + " is now eradicated");
-    return this.gameState.eradicateDesease(desease);
+    GameUtil.log(this, Pandemic.logger, "Desease " + desease.getName() + " is now eradicated");
+    return gameState.eradicateDesease(desease);
   }
 
   private boolean uneradicate(Desease desease) {
-    GameUtil.log(this, logger, "Desease " + desease.getName() + " is not eradicated anymore");
-    return this.gameState.unEradicateDesease(desease);
+    GameUtil.log(this, Pandemic.logger,
+        "Desease " + desease.getName() + " is not eradicated anymore");
+    return gameState.unEradicateDesease(desease);
   }
 
   public void setStep(GameStep setStep) {
     if (!isOver()) {
-      this.gameState.gameStep = setStep;
+      gameState.gameStep = setStep;
     }
   }
 
   public boolean isDebugLog() {
-    return this.debugLog;
+    return debugLog;
   }
 
   public void setDebugLog(boolean b) {
-    this.debugLog = true;
+    debugLog = true;
   }
 
   public boolean canPlay() {
-    return this.gameState.gameStep == GameStep.play && this.gameState.getCurrentActionCount() > 0;
+    return gameState.gameStep == GameStep.play && gameState.getCurrentActionCount() > 0;
   }
 
   public boolean mustDiscard() {
-    if (this.gameState.gameStep == GameStep.discard) {
-      for (Hand hand : this.gameState.getAllCharacterHand()) {
-        if (hand.size() > this.gameState.gameProperties.maxHandSize)
+    if (gameState.gameStep == GameStep.discard) {
+      for (final Hand hand : gameState.getAllCharacterHand()) {
+        if (hand.size() > gameState.gameProperties.maxHandSize)
           return true;
       }
     }
@@ -265,16 +233,16 @@ public class Pandemic extends AbstractGame<State> {
   }
 
   public Set<ActionSerie> allActions() {
-    Set<ActionSerie> result = new HashSet<ActionSerie>();
-    if (this.gameState.getCurrentActionCount() > 0) {
-      if (this.gameState.previousActionList.size() == 0
-          || this.gameState.previousActionList.getLast() instanceof MoveAction) {
-        HashSet<ActionSerie> actionSerieSet = getStaticActions(
-            this.gameState.getCurrentActionCount(), this.gameState.previousActionList.size());
-        for (ActionSerie actionSerie : actionSerieSet) {
+    final Set<ActionSerie> result = new HashSet<ActionSerie>();
+    if (gameState.getCurrentActionCount() > 0) {
+      if (gameState.previousActionList.size() == 0
+          || gameState.previousActionList.getLast() instanceof MoveAction) {
+        final HashSet<ActionSerie> actionSerieSet = getStaticActions(
+            gameState.getCurrentActionCount(), gameState.previousActionList.size());
+        for (final ActionSerie actionSerie : actionSerieSet) {
           if (actionSerie.perform(this)) {
-            if (this.gameState.getCurrentActionCount() == 0) {
-              result.add(new ActionSerie(this.gameState.previousActionList));
+            if (gameState.getCurrentActionCount() == 0) {
+              result.add(new ActionSerie(gameState.previousActionList));
             } else {
               result.addAll(allActions());
             }
@@ -285,14 +253,14 @@ public class Pandemic extends AbstractGame<State> {
           }
         }
       }
-      if (this.gameState.previousActionList.size() == 0
-          || this.gameState.previousActionList.getLast() instanceof StaticAction) {
-        HashSet<ActionSerie> actionSerieSet = getMoveActions(this.gameState.getCurrentActionCount(),
-            this.gameState.previousActionList.size());
-        for (ActionSerie actionSerie : actionSerieSet) {
+      if (gameState.previousActionList.size() == 0
+          || gameState.previousActionList.getLast() instanceof StaticAction) {
+        final HashSet<ActionSerie> actionSerieSet =
+            getMoveActions(gameState.getCurrentActionCount(), gameState.previousActionList.size());
+        for (final ActionSerie actionSerie : actionSerieSet) {
           if (actionSerie.perform(this)) {
-            if (this.gameState.getCurrentActionCount() == 0) {
-              result.add(new ActionSerie(this.gameState.previousActionList));
+            if (gameState.getCurrentActionCount() == 0) {
+              result.add(new ActionSerie(gameState.previousActionList));
             } else {
               result.addAll(allActions());
             }
@@ -304,7 +272,7 @@ public class Pandemic extends AbstractGame<State> {
       }
 
     } else {
-      result.add(this.gameState.previousActionList);
+      result.add(gameState.previousActionList);
     }
 
     return result;
@@ -315,14 +283,14 @@ public class Pandemic extends AbstractGame<State> {
   }
 
   public HashSet<ActionSerie> getMoveActions(int actionsLeft, int index) {
-    HashSet<ActionSerie> result = new HashSet<ActionSerie>();
-    GameAction lastAction = this.gameState.previousActionList.size() > 0
-        && this.gameState.previousActionList.getLast() instanceof MoveAction
-            ? this.gameState.previousActionList.getLast()
+    final HashSet<ActionSerie> result = new HashSet<ActionSerie>();
+    final GameAction lastAction = gameState.previousActionList.size() > 0
+        && gameState.previousActionList.getLast() instanceof MoveAction
+            ? gameState.previousActionList.getLast()
             : null;
     if (actionsLeft == 0) {
     } else if (actionsLeft == 1) {
-      for (GameAction gameAction : this.gameState.getCurrentPlayerPosition().allMoveActions) {
+      for (final GameAction gameAction : gameState.getCurrentPlayerPosition().allMoveActions) {
         if (lastAction != null) {
           if (lastAction.getPriority() < gameAction.getPriority()) {
             // OK
@@ -338,8 +306,8 @@ public class Pandemic extends AbstractGame<State> {
 
         if (canMergeCancelVersion(gameAction)) {
           if (gameAction.canPerform(this)) {
-            ActionSerie merged = new ActionSerie(this.gameState.previousActionList.subList(index,
-                this.gameState.previousActionList.size()));
+            final ActionSerie merged = new ActionSerie(
+                gameState.previousActionList.subList(index, gameState.previousActionList.size()));
             merged.addLast(gameAction);
             result.add(merged);
           }
@@ -348,7 +316,7 @@ public class Pandemic extends AbstractGame<State> {
       }
     } else {
 
-      for (GameAction firstAction : this.gameState.getCurrentPlayerPosition().allMoveActions) {
+      for (final GameAction firstAction : gameState.getCurrentPlayerPosition().allMoveActions) {
         if (lastAction != null) {
           if (lastAction.getPriority() < firstAction.getPriority()) {
             // OK
@@ -362,15 +330,15 @@ public class Pandemic extends AbstractGame<State> {
         }
 
         if (firstAction.perform(this)) {
-          HashSet<ActionSerie> subResult =
+          final HashSet<ActionSerie> subResult =
               getMoveActions(actionsLeft - firstAction.actionCost, index);
-          subResult.add(new ActionSerie(this.gameState.previousActionList.subList(index,
-              this.gameState.previousActionList.size())));
-          for (ActionSerie gameActionList : subResult) {
+          subResult.add(new ActionSerie(
+              gameState.previousActionList.subList(index, gameState.previousActionList.size())));
+          for (final ActionSerie gameActionList : subResult) {
 
             int shuttleFlightCount = 0;
             boolean invalid = false;
-            Iterator<GameAction> it =
+            final Iterator<GameAction> it =
                 gameActionList.listIterator(gameActionList.indexOf(firstAction));
             GameAction gameAction;
             int actionCost = 0;
@@ -413,17 +381,17 @@ public class Pandemic extends AbstractGame<State> {
             // Last move cannot discard except if destination is a card to give or if is research
             // center
             // TODO should adapt to what happened during the ActionSerie
-            if (this.gameState.getCurrentActionCount() + firstAction.actionCost <= actionCost) {
+            if (gameState.getCurrentActionCount() + firstAction.actionCost <= actionCost) {
               if (gameActionList.getFirst() instanceof DirectFlight) {
-                if (!this.gameState.getCurrentHand()
+                if (!gameState.getCurrentHand()
                     .contains(((MoveAction) gameActionList.getLast()).destination.getCityCard())) {
                   invalid = true;
                 }
               }
               if (gameActionList.getLast() instanceof CharterFlight) {
-                if (!this.gameState.getCurrentHand()
+                if (!gameState.getCurrentHand()
                     .contains(((MoveAction) gameActionList.getLast()).destination.getCityCard())
-                    && !this.gameState.hasResearchCenter(
+                    && !gameState.hasResearchCenter(
                         ((CharterFlight) gameActionList.getLast()).destination)) {
                   invalid = true;
                 }
@@ -443,14 +411,14 @@ public class Pandemic extends AbstractGame<State> {
 
   public HashSet<ActionSerie> getStaticActions(int actionsLeft, int index) {
 
-    HashSet<ActionSerie> result = new HashSet<ActionSerie>();
-    GameAction lastAction = this.gameState.previousActionList.size() > 0
-        && this.gameState.previousActionList.getLast() instanceof StaticAction
-            ? this.gameState.previousActionList.getLast()
+    final HashSet<ActionSerie> result = new HashSet<ActionSerie>();
+    final GameAction lastAction = gameState.previousActionList.size() > 0
+        && gameState.previousActionList.getLast() instanceof StaticAction
+            ? gameState.previousActionList.getLast()
             : null;
     if (actionsLeft == 0) {
     } else if (actionsLeft == 1) {
-      for (GameAction gameAction : this.gameState.getCurrentPlayerPosition().allStaticActions) {
+      for (final GameAction gameAction : gameState.getCurrentPlayerPosition().allStaticActions) {
         if (lastAction != null) {
           if (lastAction.getPriority() < gameAction.getPriority()) {
             // OK
@@ -465,8 +433,8 @@ public class Pandemic extends AbstractGame<State> {
 
         if (canMergeCancelVersion(gameAction)) {
           if (gameAction.canPerform(this)) {
-            ActionSerie merged = new ActionSerie(this.gameState.previousActionList.subList(index,
-                this.gameState.previousActionList.size()));
+            final ActionSerie merged = new ActionSerie(
+                gameState.previousActionList.subList(index, gameState.previousActionList.size()));
             merged.addLast(gameAction);
             result.add(merged);
           }
@@ -475,7 +443,7 @@ public class Pandemic extends AbstractGame<State> {
       }
     } else {
 
-      for (GameAction firstAction : this.gameState.getCurrentPlayerPosition().allStaticActions) {
+      for (final GameAction firstAction : gameState.getCurrentPlayerPosition().allStaticActions) {
         if (lastAction != null) {
           if (lastAction.getPriority() < firstAction.getPriority()) {
             // OK
@@ -489,9 +457,9 @@ public class Pandemic extends AbstractGame<State> {
         }
 
         if (firstAction.perform(this)) {
-          result.add(new ActionSerie(this.gameState.previousActionList.subList(index,
-              this.gameState.previousActionList.size())));
-          HashSet<ActionSerie> subResult =
+          result.add(new ActionSerie(
+              gameState.previousActionList.subList(index, gameState.previousActionList.size())));
+          final HashSet<ActionSerie> subResult =
               getStaticActions(actionsLeft - firstAction.actionCost, index);
           result.addAll(subResult);
           firstAction.cancel(this);
@@ -504,56 +472,63 @@ public class Pandemic extends AbstractGame<State> {
 
   @Override
   public Pandemic duplicate() {
-    Pandemic result = new Pandemic(gameState.duplicate());
+    final Pandemic result = new Pandemic(gameState.duplicate());
     result.debugLog = true;
     return result;
   }
 
   @Override
   public ArrayList<ActionSerie> getMoves() {
-    this.gameState.previousActionList.clear();
-    return new ArrayList<ActionSerie>(allActions());
+    gameState.previousActionList.clear();
+    return new ArrayList<ActionSerie>(this.duplicate().allActions());
   }
 
   @Override
   public boolean update() {
-    switch (this.gameState.gameStep) {
-      case play:
-        if (!canPlay()) {
-          this.setStep(Pandemic.GameStep.draw);
-        } else {
-          return true;
-        }
-      case draw:
-        this.drawEndTurn();
-        this.setStep(Pandemic.GameStep.discard);
-        break;
-      case discard:
-        if (!mustDiscard()) {
-          this.setStep(Pandemic.GameStep.propagate);
-        } else {
-          return true;
-        }
-        break;
-      case propagate:
-        propagationEndTurn();
-        nextPlayer();
-        this.setStep(Pandemic.GameStep.play);
-        break;
-      default:
-        break;
+    if(gameState.curedDeseaseCount == gameState.gameProperties.deseaseList.size()) {
+      setStep(Pandemic.GameStep.win);
+      return false;
+    } else {
+      switch (gameState.gameStep) {
+        case play:
+          if (!canPlay()) {
+            setStep(Pandemic.GameStep.draw);
+          } else {
+            return true;
+          }
+        case draw:
+          drawEndTurn();
+          setStep(Pandemic.GameStep.discard);
+          break;
+        case discard:
+          if (!mustDiscard()) {
+            setStep(Pandemic.GameStep.propagate);
+          } else {
+            return true;
+          }
+          break;
+        case propagate:
+          propagationEndTurn();
+          nextPlayer();
+          setStep(Pandemic.GameStep.play);
+          break;
+        default:
+          break;
+      }
+      return false;
     }
-    return false;
+    
+    
   }
 
   @Override
   public State getGameState() {
-    return (State) this.gameState;
+    return gameState;
   }
 
   @Override
   public boolean isOver() {
-    if (this.gameState.gameStep == GameStep.lose || isWin()) {
+    if (gameState.gameStep == GameStep.lose || isWin()) {
       return true;
     }
     return false;
@@ -561,7 +536,7 @@ public class Pandemic extends AbstractGame<State> {
 
   @Override
   public boolean isWin() {
-    return this.gameState.gameStep == GameStep.win;
+    return gameState.gameStep == GameStep.win;
   }
 
 }

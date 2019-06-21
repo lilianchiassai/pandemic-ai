@@ -29,7 +29,7 @@ public final class Properties extends GameProperties {
 
 
   public Properties(int characterReserveSize, int difficulty) {
-    logger.info("Instantiating new game.");
+    Properties.logger.info("Instantiating new game.");
 
 
     numberOfPlayers = characterReserveSize;
@@ -41,7 +41,7 @@ public final class Properties extends GameProperties {
     propagationSpeed = new int[] {2, 2, 2, 3, 3, 4, 4};
     this.difficulty = difficulty;
     deseaseList = new ArrayList<Desease>(Reserve.getInstance().getDeseaseSet().size());
-    for (Desease desease : Reserve.getInstance().getDeseaseSet()) {
+    for (final Desease desease : Reserve.getInstance().getDeseaseSet()) {
       deseaseList.add(desease.id, desease);
     }
 
@@ -50,7 +50,7 @@ public final class Properties extends GameProperties {
     map = new HashSet<City>(Reserve.getInstance().getMap().values());
 
 
-    logger.info("Game ready");
+    Properties.logger.info("Game ready");
   }
 
   public int getPropagationSpeed(int epidemicCounter) {
