@@ -17,8 +17,7 @@ public class Pass extends GameAction {
   public boolean perform(Pandemic pandemic) {
     GameUtil.log(pandemic, GameAction.logger,
         pandemic.gameState.getCurrentPlayer().getName() + " passes.");
-    super.perform(pandemic);
-    return true;
+    return super.perform(pandemic);
   }
 
   public void perform(LightGameStatus lightGameStatus) {

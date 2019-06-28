@@ -1,8 +1,6 @@
 package pandemic.engine;
 
 import java.util.ArrayList;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import game.Game;
 import mcts.MCTSPlayer;
 import mcts.MonteCarloTreeSearch;
@@ -11,8 +9,6 @@ import pandemic.Pandemic.GameStep;
 import pandemic.action.ActionSerie;
 
 public class AIPlayer extends MCTSPlayer {
-
-  private static Logger logger = LogManager.getLogger(PandemicRolloutPlayer.class.getName());
 
   public AIPlayer(MonteCarloTreeSearch mcts, int defaultLimit, int discardLimit) {
     super(mcts, (Game game) -> {

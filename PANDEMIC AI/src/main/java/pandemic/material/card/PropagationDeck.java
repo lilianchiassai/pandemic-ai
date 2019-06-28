@@ -1,77 +1,112 @@
 package pandemic.material.card;
 
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
-import pandemic.material.City;
+import pandemic.util.GameUtil;
 
-public class PropagationDeck extends Deck<PropagationCard> {
+public class PropagationDeck implements Deck<PropagationCard> {
 
-  /**
-   * 
-   */
-  private static final long serialVersionUID = -8275244158719522842L;
-  public LinkedList<LinkedList<PropagationCard>> memories;
-  PropagationCard draw;
+  int currentMemory;
+  int[] memoryIndexRange;
+  PropagationCard[] propagationDeck;
+  int top;
+  int bottom;
+  int topLimit;
 
-  public PropagationDeck() {
-    super();
-    memories = new LinkedList<LinkedList<PropagationCard>>();
+  private PropagationDeck(PropagationDeck other) {
+    this.currentMemory = other.currentMemory;
+    this.top = other.top;
+    this.topLimit = other.topLimit;
+    this.bottom = other.bottom;
+    this.memoryIndexRange = other.memoryIndexRange.clone();
+    this.propagationDeck = other.propagationDeck.clone();
+    shuffle();
   }
 
-  public PropagationDeck(Set<PropagationCard> propagationCards) {
-    super(propagationCards);
-    memories = new LinkedList<LinkedList<PropagationCard>>();
+  public PropagationDeck(int difficulty, ArrayList<PropagationCard> propagationCardReserve) {
+    propagationDeck = propagationCardReserve
+        .toArray(new PropagationCard[propagationCardReserve.size() + difficulty]);
+    top = propagationCardReserve.size() - 1;
+    bottom = 0;
+    topLimit = top - bottom;
+    memoryIndexRange = new int[difficulty];
+    currentMemory = -1;
   }
 
-  public boolean addOnTop(Deck<PropagationCard> deck) {
-    if (deck.isDiscardPileEmpty()) {
-      Collections.shuffle(deck);
-      memories.add(new LinkedList<PropagationCard>((LinkedList<? extends PropagationCard>) deck));
-      deck.clear();
+  @Override
+  public PropagationCard draw() {
+    if (currentMemory >= 0 && memoryIndexRange[currentMemory] == top) {
+      currentMemory--;
+    }
+    return propagationDeck[top--];
+  }
+
+  public PropagationCard drawBottomAndIntensify() {
+    PropagationCard card = propagationDeck[bottom];
+
+    bottom++;// remove card from the bottom of the deck
+    topLimit++;
+    propagationDeck[topLimit] = card;// add card to discard pile
+    currentMemory++;// Discard becomes the new memory
+    memoryIndexRange[currentMemory] = top + 1;// memoryIndexRange[currentMemory] contains the
+                                              // inferior limit of the memoery
+
+    top = topLimit;// refill deck
+
+    GameUtil.randomizeArray(propagationDeck, memoryIndexRange[currentMemory], topLimit);
+    return card;
+  }
+
+  @Override
+  public void shuffle() {
+    for (int i = 0; i < currentMemory + 2; i++) {
+      GameUtil.randomizeArray(propagationDeck, i > 0 ? memoryIndexRange[i - 1] : bottom,
+          i >= memoryIndexRange.length ? topLimit : (memoryIndexRange[i] - 1));
+    }
+  }
+
+  @Override
+  public PropagationDeck duplicate() {
+    return new PropagationDeck(this);
+  }
+
+  @Override
+  public boolean equivalent(Deck<PropagationCard> deck) {
+    if (deck instanceof PropagationDeck) {
+      PropagationDeck other = (PropagationDeck) deck;
+      if (this.currentMemory != other.currentMemory) {
+        return false;
+      }
+      if (this.top != other.top) {
+        return false;
+      }
+      if (this.bottom != other.bottom) {
+        return false;
+      }
+      if (!Arrays.equals(this.memoryIndexRange, other.memoryIndexRange)) {
+        return false;
+      }
+      for (int i = 0; i <= currentMemory; i++) {
+        int minRange = i > 0 ? other.memoryIndexRange[i - 1] : bottom;
+        int maxRange = other.memoryIndexRange[i] - 1;
+        Set<PropagationCard> set1 = new HashSet<PropagationCard>(
+            Arrays.asList(Arrays.copyOfRange(this.propagationDeck, minRange, maxRange)));
+        Set<PropagationCard> set2 = new HashSet<PropagationCard>(
+            Arrays.asList(Arrays.copyOfRange(this.propagationDeck, minRange, maxRange)));
+        if (!set1.equals(set2)) {
+          return false;
+        }
+      }
       return true;
     }
     return false;
   }
 
-  public PropagationCard draw() {
-    if (memories.size() > 0) {
-      draw = memories.getLast().getLast();
-      memories.getLast().remove(draw);
-      if (memories.getLast().isEmpty()) {
-        memories.removeLast();
-      }
-      return draw;
-    }
-
-    return super.draw();
+  @Override
+  public int size() {
+    return top - bottom + 1;
   }
 
-  public PropagationDeck duplicate() {
-    PropagationDeck clone = new PropagationDeck();
-    clone.addAll(this);
-    clone.memories = new LinkedList<LinkedList<PropagationCard>>();
-    for (LinkedList<PropagationCard> memory : this.memories) {
-      LinkedList<PropagationCard> memoryClone = new LinkedList<PropagationCard>(memory);
-      Collections.shuffle(memoryClone);
-      clone.memories.add(memoryClone);
-    }
-    clone.discardPile = this.discardPile != null ? this.discardPile.duplicate() : null;
-    return clone;
-  }
-
-  public boolean isInMemory(City city) {
-    for (LinkedList<PropagationCard> memory : memories) {
-      for (PropagationCard memoryCard : memory) {
-        if (memoryCard.getCity() == city) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  public LinkedList<LinkedList<PropagationCard>> getMemories() {
-    return this.memories;
-  }
 }

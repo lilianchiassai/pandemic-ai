@@ -45,7 +45,8 @@ public class ActionSerie extends LinkedList<GameAction> implements Move<Pandemic
   public boolean perform(Pandemic pandemic) {
     for (GameAction gameAction : this) {
       if (!gameAction.perform(pandemic)) {
-        throw new AssertionError("Action Serie perform error");
+        throw new IllegalArgumentException(
+            "ActionSerie could not be performed. ActionSerie validity should be ensured before perform call.");
       }
     }
     return true;

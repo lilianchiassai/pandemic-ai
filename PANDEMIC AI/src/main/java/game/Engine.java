@@ -3,9 +3,9 @@ package game;
 import java.beans.PropertyChangeSupport;
 
 public class Engine<T extends Game> {
-  
+
   final private PropertyChangeSupport support;
-  final private String fireEvent="";
+  final private String fireEvent = "";
 
   public Engine(Player player) {
     this.support = new PropertyChangeSupport(this);
@@ -20,7 +20,7 @@ public class Engine<T extends Game> {
     }
     return game;
   }
-  
+
   public void notifyPlayers(T game) {
     support.firePropertyChange(fireEvent, null, game);
   }

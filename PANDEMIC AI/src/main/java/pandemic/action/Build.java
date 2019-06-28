@@ -33,8 +33,7 @@ public class Build extends StaticAction {
         if (pandemic.gameState.addResearchCenter(pandemic.gameState.getCurrentPlayerPosition())) {
           GameUtil.log(pandemic, GameAction.logger, pandemic.gameState.getCurrentPlayer().getName()
               + " builds a new Research Center in " + origin.getName() + ".");
-          pandemic.gameState.getCurrentHand().removeAndDiscard(pandemic.gameState,
-              origin.getCityCard());
+          pandemic.gameState.getCurrentHand().remove(origin.getCityCard());
           return super.perform(pandemic);
         }
       }
@@ -47,7 +46,6 @@ public class Build extends StaticAction {
     super.cancel(pandemic);
     pandemic.gameState.removeResearchCenter(this.origin);
     pandemic.gameState.getCurrentHand().add(origin.getCityCard());
-    pandemic.gameState.getPlayerDeck().getDiscardPile().remove(origin.getCityCard());
   }
 
   @Override

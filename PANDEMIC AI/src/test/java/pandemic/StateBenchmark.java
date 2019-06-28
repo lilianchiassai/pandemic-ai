@@ -5,7 +5,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 
 
-public class StateBenchmark {
+public class StateBenchmark extends BenchmarkTest {
 
   @org.openjdk.jmh.annotations.State(Scope.Thread)
   public static class LocalState {

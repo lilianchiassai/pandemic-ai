@@ -1,17 +1,56 @@
 package pandemic.material.card;
 
 import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import pandemic.State;
 import pandemic.material.City;
+import pandemic.material.Desease;
 import pandemic.material.PlayedCharacter;
 import pandemic.util.GameUtil;
 
 public class Hand extends AbstractCollection<CityCard> implements Collection<CityCard> {
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(cityCardHand);
+    result = prime * result + ((playedCharacter == null) ? 0 : playedCharacter.hashCode());
+    result = prime * result + size;
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof Hand)) {
+      return false;
+    }
+    Hand other = (Hand) obj;
+    if (!Arrays.equals(cityCardHand, other.cityCardHand)) {
+      return false;
+    }
+    if (playedCharacter == null) {
+      if (other.playedCharacter != null) {
+        return false;
+      }
+    } else if (!playedCharacter.equals(other.playedCharacter)) {
+      return false;
+    }
+    if (size != other.size) {
+      return false;
+    }
+    return true;
+  }
 
   PlayedCharacter playedCharacter;
   TreeSet<CityCard>[] cityCardHand;
@@ -30,8 +69,8 @@ public class Hand extends AbstractCollection<CityCard> implements Collection<Cit
     return this.playedCharacter;
   }
 
-  public Set<Card> getCityCardSet() {
-    return this.stream().filter(GameUtil.getCityCardPredicate()).collect(Collectors.toSet());
+  public TreeSet<CityCard> getDeseaseCards(Desease desease) {
+    return this.cityCardHand[desease.id];
   }
 
   public CityCard getCityCard(City city) {
@@ -45,26 +84,6 @@ public class Hand extends AbstractCollection<CityCard> implements Collection<Cit
     return null;
   }
 
-  public boolean removeAndDiscard(State state, PlayerCard card) {
-    state.getPlayerDeck().getDiscardPile().addOnTop(card);
-    return this.remove(card);
-  }
-
-  public void drawBack(State state, CityCard card) {
-    state.getPlayerDeck().getDiscardPile().remove(card);
-    add(card);
-  }
-
-  public void removeAndDiscard(State state, Set<CityCard> cardSetDesease) {
-    this.removeAll(cardSetDesease);
-    state.getPlayerDeck().getDiscardPile().addOnTop((PlayerCard) cardSetDesease);
-  }
-
-  public void drawBack(State state, Set<CityCard> cardSet) {
-    state.getPlayerDeck().getDiscardPile().removeAll(cardSet);
-    this.addAll(cardSet);
-  }
-
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (TreeSet<CityCard> subHand : this.cityCardHand) {
@@ -76,7 +95,7 @@ public class Hand extends AbstractCollection<CityCard> implements Collection<Cit
   public Hand duplicate() {
     Hand clone = new Hand(this.playedCharacter);
     for (int i = 0; i < this.cityCardHand.length; i++) {
-      clone.cityCardHand[i].addAll(this.cityCardHand[i]);
+      clone.addAll(this.cityCardHand[i]);
     }
     return clone;
   }

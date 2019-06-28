@@ -12,11 +12,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import pandemic.material.City;
 import pandemic.material.Desease;
 import pandemic.material.card.Hand;
 
-public class StateTest extends BenchmarkTest {
+public class StateTest {
 
 
   private State state;
@@ -116,6 +117,13 @@ public class StateTest extends BenchmarkTest {
     assertNotSame(state.getPreviousActionList(), duplicate.getPreviousActionList());
   }
 
+  @Test
+  void testEquivalent() {
+    State duplicate = state.duplicate();
+    assertTrue(state.equivalent(duplicate));
+  }
+
+  @Test
   public void testCureDesease() {
     Desease desease = state.gameProperties.deseaseList.get(0);
     boolean isCured = state.isCured(desease);
@@ -134,4 +142,5 @@ public class StateTest extends BenchmarkTest {
       throw new AssertionError("The value is not in the provided range");
     }
   }
+
 }

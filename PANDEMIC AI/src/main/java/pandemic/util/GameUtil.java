@@ -1,6 +1,7 @@
 package pandemic.util;
 
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -32,11 +33,11 @@ import pandemic.material.card.PlayerCard;
 
 public class GameUtil {
 
-
+  public static Random random = new Random();
 
   public static void log(Pandemic pandemic, Logger logger, String message) {
     if (pandemic.isDebugLog()) {
-      //logger.debug(message);
+      // logger.debug(message);
     } else {
       logger.info(message);
     }
@@ -129,11 +130,11 @@ public class GameUtil {
     return null;
   }
 
-  public static PlayerCard getCard(String title) {
-    Set<PlayerCard> cardSet = (Set<PlayerCard>) Reserve.getInstance().getPlayerCardReserve()
-        .stream().filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
+  public static CityCard getCard(String title) {
+    Set<CityCard> cardSet = (Set<CityCard>) Reserve.getInstance().getPlayerCardReserve().stream()
+        .filter(GameUtil.getCardTitlePredicate(title)).collect(Collectors.toSet());
     if (cardSet != null) {
-      Iterator<PlayerCard> it = cardSet.iterator();
+      Iterator<CityCard> it = cardSet.iterator();
       if (it.hasNext()) {
         return it.next();
       }
@@ -251,6 +252,26 @@ public class GameUtil {
       return result.iterator().next();
     }
     throw new AssertionError(cityId + " does not refer to any city ID.");
+  }
+
+  public static <T> T[] randomizeArray(T[] array) {
+    for (int i = 0; i < array.length; i++) {
+      int randomPosition = random.nextInt(array.length);
+      T temp = array[i];
+      array[i] = array[randomPosition];
+      array[randomPosition] = temp;
+    }
+    return array;
+  }
+
+  public static <T> T[] randomizeArray(T[] array, int from, int to) {
+    for (int i = from; i < to + 1; i++) {
+      int randomPosition = from + random.nextInt(to - from + 1);
+      T temp = array[i];
+      array[i] = array[randomPosition];
+      array[randomPosition] = temp;
+    }
+    return array;
   }
 
 }

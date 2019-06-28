@@ -4,7 +4,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 
-public class PandemicBenchmark {
+public class PandemicBenchmark extends BenchmarkTest {
   @org.openjdk.jmh.annotations.State(Scope.Thread)
   public static class LocalState {
     @Setup

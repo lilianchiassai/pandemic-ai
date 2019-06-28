@@ -1,10 +1,10 @@
+
 package pandemic;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.function.ToIntFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import game.AbstractGame;
@@ -28,10 +28,18 @@ import pandemic.util.GameUtil;
 
 public class Pandemic extends AbstractGame<State> {
 
+  public boolean equivalent(Pandemic other) {
+    if (gameState == null) {
+      if (other.gameState != null)
+        return false;
+    } else if (!gameState.equivalent(other.gameState))
+      return false;
+    return true;
+  }
+
   boolean debugLog;
   Set<City> alreadyEcloded;
   City eclosionStart;
-  ToIntFunction<Pandemic> gameOver;
 
   public Pandemic(State state) {
     gameState = state;
@@ -128,20 +136,16 @@ public class Pandemic extends AbstractGame<State> {
       if (card == null) {
         // lose(gameStatus);
         GameUtil.log(this, Pandemic.logger, "No more player card.");
-        setStep(GameStep.win);
       } else if (card instanceof EpidemicCard) {
-        // do Epidemy
+        // do Epidemic
         GameUtil.log(this, Pandemic.logger, gameState.getCurrentPlayer().getName() + " draws the "
             + (gameState.getEpidemicCount() + 1) + "th Epidemic.");
-        final PropagationCard infectedCard = gameState.propagationDeck.drawBottomCard();
+        final PropagationCard infectedCard = gameState.propagationDeck.drawBottomAndIntensify();
         if (infectedCard == null) {
-          GameUtil.log(this, Pandemic.logger, "No propagation card");
+          GameUtil.log(this, Pandemic.logger, "No more propagation card");
           lose();
         } else {
-          gameState.propagationDeck.discard(infectedCard);
           infect(infectedCard.getCity(), 3);
-          gameState.increaseEpidemicCounter();
-          gameState.propagationDeck.addOnTop(gameState.propagationDeck.getDiscardPile().shuffle());
         }
       } else {
         gameState.getCurrentHand().add((CityCard) card);
@@ -159,7 +163,6 @@ public class Pandemic extends AbstractGame<State> {
         lose();
       } else {
         infect(card.getCity());
-        gameState.propagationDeck.discard(card);
       }
     }
   }
@@ -175,8 +178,9 @@ public class Pandemic extends AbstractGame<State> {
   }
 
   public boolean findCure(Desease desease) {
-    gameState.cureDesease(desease);
-    return true;
+    boolean result = gameState.cureDesease(desease);
+    checkEradicated(desease);
+    return result;
   }
 
   public boolean cancelCure(Desease desease) {
@@ -485,7 +489,7 @@ public class Pandemic extends AbstractGame<State> {
 
   @Override
   public boolean update() {
-    if(gameState.curedDeseaseCount == gameState.gameProperties.deseaseList.size()) {
+    if (gameState.curedDeseaseCount == gameState.gameProperties.deseaseList.size()) {
       setStep(Pandemic.GameStep.win);
       return false;
     } else {
@@ -517,8 +521,8 @@ public class Pandemic extends AbstractGame<State> {
       }
       return false;
     }
-    
-    
+
+
   }
 
   @Override

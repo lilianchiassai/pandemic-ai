@@ -2,10 +2,8 @@ package pandemic;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pandemic.material.City;
@@ -21,8 +19,8 @@ public final class Reserve {
   private volatile static Reserve instance = null;
 
   private static Logger logger = LogManager.getLogger(Reserve.class.getName());
-  Set<PlayerCard> playerCardReserve;
-  Set<PropagationCard> propagationCardReserve;
+  ArrayList<CityCard> playerCardReserve;
+  ArrayList<PropagationCard> propagationCardReserve;
   EpidemicCard epidemicCardReserve;
   private final LinkedList<PlayedCharacter> characterReserve;
   private final ArrayList<Desease> deseaseSet;
@@ -346,8 +344,8 @@ public final class Reserve {
     // Instantiate Reserve
     Reserve.logger.info("Building reserve.");
     characterReserve = new LinkedList<PlayedCharacter>();
-    propagationCardReserve = new HashSet<PropagationCard>();
-    playerCardReserve = new HashSet<PlayerCard>();
+    propagationCardReserve = new ArrayList<PropagationCard>();
+    playerCardReserve = new ArrayList<CityCard>();
 
 
     // Create Cards
@@ -416,7 +414,11 @@ public final class Reserve {
     return epidemicCardReserve;
   }
 
-  public Set<PlayerCard> getPlayerCardReserve() {
+  public ArrayList<CityCard> getPlayerCardReserve() {
     return playerCardReserve;
+  }
+
+  public ArrayList<PropagationCard> getPropagationCardReserve() {
+    return propagationCardReserve;
   }
 }

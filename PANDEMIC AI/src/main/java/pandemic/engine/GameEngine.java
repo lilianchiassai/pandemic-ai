@@ -1,12 +1,9 @@
 package pandemic.engine;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import game.Engine;
 import pandemic.Pandemic;
 
 public class GameEngine {
-  private static Logger logger = LogManager.getLogger(GameEngine.class.getName());
 
   public static void main(String[] args) {
     int a = 3;

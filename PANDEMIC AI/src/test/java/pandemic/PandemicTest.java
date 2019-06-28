@@ -3,7 +3,6 @@ package pandemic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
@@ -11,14 +10,12 @@ import org.junit.jupiter.api.Test;
 import pandemic.Pandemic.GameStep;
 import pandemic.material.City;
 import pandemic.material.Desease;
-import pandemic.material.PlayedCharacter;
 import pandemic.material.card.CityCard;
-import pandemic.material.card.EpidemicCard;
 import pandemic.material.card.Hand;
 import pandemic.material.card.PlayerCard;
 import pandemic.util.GameUtil;
 
-public class PandemicTest extends BenchmarkTest {
+public class PandemicTest {
 
   private Pandemic pandemic;
 
@@ -32,9 +29,12 @@ public class PandemicTest extends BenchmarkTest {
     pandemic = null;
   }
 
-  @Test
+  @RepeatedTest(100)
   public void testPandemic() {
-    fail("Not yet implemented");
+    assertTrue(pandemic != null);
+    pandemic = new Pandemic(4, 5);
+    assertTrue(pandemic != null);
+    pandemic = new Pandemic(State.Builder.randomStateBuilder().build());
   }
 
   @Test
@@ -80,7 +80,7 @@ public class PandemicTest extends BenchmarkTest {
         pandemic.gameState.getCurrentHand().getCharacter().id);
   }
 
-  @RepeatedTest(20)
+  @RepeatedTest(200)
   public void testDrawEndTurn() {
     int playerDeckSize = pandemic.gameState.getPlayerDeck().size();
     int epidemicCount = pandemic.gameState.getEpidemicCount();
@@ -92,7 +92,7 @@ public class PandemicTest extends BenchmarkTest {
         - pandemic.gameState.getEpidemicCount()
         + epidemicCount == pandemic.gameState.getCurrentHand().size());
     assertTrue(pandemic.gameState.getEpidemicCount() == epidemicCount
-        || pandemic.gameState.propagationDeck.getDiscardPile().isEmpty());
+        || pandemic.gameState.propagationDeck.size() == 48);
   }
 
   @Test
@@ -109,8 +109,6 @@ public class PandemicTest extends BenchmarkTest {
   @Test
   public void testGiveCard() {
     pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
-    PlayedCharacter character1 = Reserve.getInstance().getCharacterList(2).get(0);
-    PlayedCharacter character2 = Reserve.getInstance().getCharacterList(2).get(1);
     pandemic.gameState.getAllCharacterHand()[0].add(GameUtil.getCity("Atlanta").getCityCard());
     pandemic.giveCard(pandemic.gameState.getAllCharacterHand()[0].getCharacter(),
         pandemic.gameState.getAllCharacterHand()[1].getCharacter(),
@@ -121,33 +119,50 @@ public class PandemicTest extends BenchmarkTest {
 
   @Test
   public void testCancelCure() {
-    fail("Not yet implemented");
+    pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
+    pandemic.findCure(GameUtil.getCity("Atlanta").getDesease());
+    pandemic.cancelCure(GameUtil.getCity("Atlanta").getDesease());
+    assertTrue(!pandemic.gameState.isCured(GameUtil.getCity("Atlanta").getDesease()));
   }
 
   @Test
   public void testCheckEradicated() {
-    fail("Not yet implemented");
+    pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
+    pandemic.infect(GameUtil.getCity("Miami"), 1);
+    pandemic.gameState.cureDesease(GameUtil.getCity("Atlanta").getDesease());
+    pandemic.gameState.cureDesease(GameUtil.getCity("Miami").getDesease());
+    assertTrue(pandemic.checkEradicated(GameUtil.getCity("Atlanta").getDesease()));
+    assertTrue(!pandemic.checkEradicated(GameUtil.getCity("Miami").getDesease()));
   }
 
   @Test
   public void testCanPlay() {
-    fail("Not yet implemented");
+    pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
+    assertTrue(pandemic.canPlay());
+    pandemic.perform(GameUtil.getCity("Atlanta").getMultiDrive(GameUtil.getCity("Miami")));
+    assertTrue(pandemic.canPlay());
+    pandemic.perform(GameUtil.getCity("Miami").getMultiDrive(GameUtil.getCity("Atlanta")));
+    pandemic.perform(GameUtil.getCity("Atlanta").getMultiDrive(GameUtil.getCity("Miami")));
+    pandemic.perform(GameUtil.getCity("Miami").getMultiDrive(GameUtil.getCity("Atlanta")));
+    assertTrue(!pandemic.canPlay());
   }
 
   @Test
   public void testMustDiscard1() {
     pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
     pandemic.setStep(GameStep.discard);
-    while(pandemic.gameState.getCurrentHand().size() <= pandemic.gameState.gameProperties.maxHandSize) {
+    while (pandemic.gameState.getCurrentHand()
+        .size() < pandemic.gameState.gameProperties.maxHandSize) {
       PlayerCard card = pandemic.gameState.getPlayerDeck().draw();
-      if(card instanceof CityCard) {
+      if (card instanceof CityCard) {
         pandemic.gameState.getCurrentHand().add((CityCard) card);
       }
     }
     assertTrue(!pandemic.mustDiscard());
-    while(pandemic.gameState.getCurrentHand().size() <=1+ pandemic.gameState.gameProperties.maxHandSize) {
+    while (pandemic.gameState.getCurrentHand().size() < 1
+        + pandemic.gameState.gameProperties.maxHandSize) {
       PlayerCard card = pandemic.gameState.getPlayerDeck().draw();
-      if(card instanceof CityCard) {
+      if (card instanceof CityCard) {
         pandemic.gameState.getCurrentHand().add((CityCard) card);
       }
     }
@@ -156,17 +171,17 @@ public class PandemicTest extends BenchmarkTest {
 
   @Test
   public void testAllActions() {
-    //TODO
+    // TODO
   }
 
   @Test
   public void testGetMoveActions() {
-    //TODO
+    // TODO
   }
 
   @Test
   public void testGetStaticActions() {
-    //TODO
+    // TODO
   }
 
   @Test
@@ -178,15 +193,16 @@ public class PandemicTest extends BenchmarkTest {
 
   @Test
   public void testUpdate() {
-    //TODO
+    // TODO
   }
 
   @Test
   public void testIsWin() {
     pandemic = new Pandemic(State.Builder.blankStateBuilder(new Properties(2, 3)).build());
-    for(Desease desease : pandemic.gameState.gameProperties.deseaseList) {
+    for (Desease desease : pandemic.gameState.gameProperties.deseaseList) {
       pandemic.gameState.cureDesease(desease);
-    }  
+    }
+    pandemic.update();
     assertTrue(pandemic.isOver());
     assertTrue(pandemic.isWin());
   }

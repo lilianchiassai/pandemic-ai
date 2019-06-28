@@ -21,7 +21,7 @@ public class MCTSPlayer extends AbstractPlayer {
     this.mcts = mcts;
     this.timeLimit = timeLimit;
   }
-  
+
   @Override
   public void propertyChange(PropertyChangeEvent evt) {
     playPolicy((Game) evt.getNewValue());

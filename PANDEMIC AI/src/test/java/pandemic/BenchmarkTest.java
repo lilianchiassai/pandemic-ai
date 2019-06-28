@@ -15,8 +15,9 @@ public abstract class BenchmarkTest {
   public void testRunBenchmark() throws RunnerException {
     Options opt = new OptionsBuilder()
 
-        .include(this.getClass().getSimpleName().subSequence(0,
-            this.getClass().getSimpleName().length() - 4) + "Benchmark")
+        .include(
+            this.getClass().getSimpleName().substring(this.getClass().getSimpleName().length() - 5)
+                + "Benchmark")
         .mode(Mode.AverageTime).timeUnit(TimeUnit.MICROSECONDS).warmupTime(TimeValue.seconds(1))
         .warmupIterations(2).measurementTime(TimeValue.seconds(1)).measurementIterations(2)
         .threads(1).forks(1)

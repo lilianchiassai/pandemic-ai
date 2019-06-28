@@ -8,7 +8,6 @@ Future releases
 - provide use instruction
 - update README with mardown syntax
 - check MCTS algorithm implementation
-- write JUnit tests for the pandemic package
 - write JMH benchmark for critical methods
 - optimize deck creation/duplication
 - optimize gameState duplication
@@ -16,6 +15,12 @@ Future releases
 - provide a more optimized Pandemic.getMoves method
 
 Changelog
+2019.06.28
+- Junit tests cover all pandemic package except material. JUnit tests to be added before any refactoring of the material package
+- Deck, PlayerDeck, PropagationDeck refactored
+- Benchmark deck critical operations (draw, duplicate)
+- add equivalent method to test logical equality between objects
+
 2019.06.20
  - Deprecated observer pattern migrated to PropertyChangeListener
  - JUnit tests in progress

@@ -30,7 +30,7 @@ public class CharterFlight extends MoveAction {
     CityCard cityCard = pandemic.gameState.getCurrentHand()
         .getCityCard(pandemic.gameState.getCurrentPlayerPosition());
     if (cityCard != null && super.perform(pandemic)) {
-      pandemic.gameState.getCurrentHand().removeAndDiscard(pandemic.gameState, cityCard);
+      pandemic.gameState.getCurrentHand().remove(cityCard);
       GameUtil.log(pandemic, GameAction.logger, pandemic.gameState.getCurrentPlayer().getName()
           + " takes a charter flight from " + origin.getName() + " to " + destination.getName());
       return pandemic.gameState.setCharacterPosition(pandemic.gameState.getCurrentPlayer(),
@@ -43,7 +43,6 @@ public class CharterFlight extends MoveAction {
   public void cancel(Pandemic pandemic) {
     super.cancel(pandemic);
     pandemic.gameState.getCurrentHand().add(origin.getCityCard());
-    pandemic.gameState.getPlayerDeck().getDiscardPile().remove(origin.getCityCard());
   }
 
   @Override

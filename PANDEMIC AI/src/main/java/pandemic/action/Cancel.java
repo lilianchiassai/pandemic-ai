@@ -28,4 +28,9 @@ public class Cancel extends GameAction {
     return Cancel.priority;
   }
 
+  @Override
+  public void cancel(Pandemic pandemic) {
+    throw new IllegalArgumentException("CancelAction is not cancelable");
+  }
+
 }

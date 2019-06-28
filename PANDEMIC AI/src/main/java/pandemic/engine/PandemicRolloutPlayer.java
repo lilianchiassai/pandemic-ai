@@ -1,16 +1,12 @@
 package pandemic.engine;
 
 import java.util.ArrayList;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import game.Game;
 import mcts.RolloutPlayer;
 import pandemic.Pandemic;
 import pandemic.action.ActionSerie;
 
 public class PandemicRolloutPlayer extends RolloutPlayer {
-
-  private static Logger logger = LogManager.getLogger(PandemicRolloutPlayer.class.getName());
 
   public PandemicRolloutPlayer() {}
 

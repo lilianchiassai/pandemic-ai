@@ -30,7 +30,7 @@ public class DirectFlight extends MoveAction {
   public boolean perform(Pandemic pandemic) {
     CityCard cityCard = pandemic.gameState.getCurrentHand().getCityCard(destination);
     if (cityCard != null && super.perform(pandemic)) {
-      pandemic.gameState.getCurrentHand().removeAndDiscard(pandemic.gameState, cityCard);
+      pandemic.gameState.getCurrentHand().remove(cityCard);
       GameUtil.log(pandemic, GameAction.logger, pandemic.gameState.getCurrentPlayer().getName()
           + " flies directly from " + origin.getName() + " to " + destination.getName());
       return pandemic.gameState.setCharacterPosition(pandemic.gameState.getCurrentPlayer(),
@@ -43,7 +43,6 @@ public class DirectFlight extends MoveAction {
   public void cancel(Pandemic pandemic) {
     super.cancel(pandemic);
     pandemic.gameState.getCurrentHand().add(destination.getCityCard());
-    pandemic.gameState.getPlayerDeck().getDiscardPile().remove(destination.getCityCard());
   }
 
   @Override

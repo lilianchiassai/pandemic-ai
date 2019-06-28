@@ -26,10 +26,10 @@ public class Cure extends StaticAction {
 
   public boolean canPerform(Pandemic pandemic) {
     if (pandemic.gameState.getCurrentActionCount() >= this.actionCost) {
-      if (pandemic.gameState.getCurrentHand().size() > this.set.size()
+      if (pandemic.gameState.getCurrentHand().size() >= this.set.size()
           && !pandemic.gameState.isCured(desease)
           && pandemic.gameState.hasResearchCenter(pandemic.gameState.getCurrentPlayerPosition())) {
-        if (pandemic.gameState.getCurrentHand().containsAll(this.set)) {
+        if (pandemic.gameState.getCurrentHand().containsAll(this.set) && super.perform(pandemic)) {
           return true;
         }
       }
@@ -38,10 +38,10 @@ public class Cure extends StaticAction {
   }
 
   public boolean perform(Pandemic pandemic) {
-    if (pandemic.gameState.getCurrentHand().size() > this.set.size()
+    if (pandemic.gameState.getCurrentHand().size() >= this.set.size()
         && !pandemic.gameState.isCured(desease) && pandemic.gameState.hasResearchCenter(origin)) {
-      if (pandemic.gameState.getCurrentHand().containsAll(this.set)) {
-        pandemic.gameState.getCurrentHand().removeAndDiscard(pandemic.gameState, this.set);
+      if (pandemic.gameState.getCurrentHand().containsAll(this.set) && super.perform(pandemic)) {
+        pandemic.gameState.getCurrentHand().removeAll(this.set);
         GameUtil.log(pandemic, GameAction.logger,
             pandemic.gameState.getCurrentPlayer().getName() + " finds a Cure in " + origin.getName()
                 + " for the " + desease.getName() + " desease.");
@@ -105,8 +105,7 @@ public class Cure extends StaticAction {
 
   public void cancel(Pandemic pandemic) {
     super.cancel(pandemic);
-    pandemic.gameState.unCureDesease(desease);
+    pandemic.cancelCure(desease);
     pandemic.gameState.getCurrentHand().addAll(this.set);
-    pandemic.gameState.getPlayerDeck().getDiscardPile().removeAll(this.set);
   }
 }

@@ -25,7 +25,7 @@ public class HumanPlayer extends AbstractPlayer {
   public HumanPlayer() {
     super();
   }
-  
+
   @Override
   public void propertyChange(PropertyChangeEvent evt) {
     Pandemic game = (Pandemic) evt.getNewValue();
@@ -51,12 +51,14 @@ public class HumanPlayer extends AbstractPlayer {
         logger.info("Type the name of the card to discard.");
         scanner = new Scanner(System.in);
         String str = scanner.nextLine();
-        Discard discard = new Discard(hand.getCharacter(), GameUtil.getCard(hand, str));
+        Discard discard = new Discard(pandemic.gameState.getCurrentPlayerPosition(),
+            hand.getCharacter(), GameUtil.getCard(hand, str));
         while (!discard.perform(pandemic)) {
           logger.info("Invalid name of card please try again");
           scanner = new Scanner(System.in);
           str = scanner.nextLine();
-          discard = new Discard(hand.getCharacter(), GameUtil.getCard(hand, str));
+          discard = new Discard(pandemic.gameState.getCurrentPlayerPosition(), hand.getCharacter(),
+              GameUtil.getCard(hand, str));
         }
       }
     }
@@ -127,8 +129,15 @@ public class HumanPlayer extends AbstractPlayer {
       String playerName = str.split("-")[1];
       PlayedCharacter otherPlayer = GameUtil.getPlayer(playerName);
       if (otherPlayer != null) {
-        gameAction =
-            pandemic.gameState.getCharacterPosition(playedCharacter).getShareKnowledge(otherPlayer);
+        if (pandemic.gameState.getCurrentHand()
+            .contains(pandemic.gameState.getCharacterPosition(playedCharacter).getCityCard())) {
+          gameAction = pandemic.gameState.getCharacterPosition(playedCharacter)
+              .getGiveKnowledge(otherPlayer);
+        } else {
+          gameAction = pandemic.gameState.getCharacterPosition(playedCharacter)
+              .getReceiveKnowledge(otherPlayer);
+        }
+
       } else {
         invalid = true;
       }

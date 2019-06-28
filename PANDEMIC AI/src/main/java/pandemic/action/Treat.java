@@ -40,12 +40,13 @@ public class Treat extends StaticAction {
   public boolean canPerform(Pandemic pandemic) {
     if (pandemic.gameState.getCurrentActionCount() >= this.actionCost) {
       if (healAll) {
-        if (pandemic.gameState.getCityCubeCount(pandemic.gameState.getCurrentPlayerPosition(),
-            desease) == strength && pandemic.gameState.isCured(desease)) {
+        if (pandemic.gameState.getCityCubeCount(origin, desease) == strength
+            && pandemic.gameState.isCured(desease)) {
           return true;
         }
         return false;
-      } else if (pandemic.gameState.getCityCubeCount(origin, desease) >= strength) {
+      } else if (!pandemic.gameState.isCured(desease)
+          && pandemic.gameState.getCityCubeCount(origin, desease) >= strength) {
         return true;
       }
     }
@@ -62,7 +63,7 @@ public class Treat extends StaticAction {
         pandemic.checkEradicated(desease);
         return true;
       }
-      if (!healAll && super.perform(pandemic)) {
+      if (!healAll && !pandemic.gameState.isCured(desease) && super.perform(pandemic)) {
         return pandemic.gameState.removeCube(pandemic.gameState.getCurrentPlayerPosition(), desease,
             strength);
       }
@@ -72,7 +73,8 @@ public class Treat extends StaticAction {
 
   public void cancel(Pandemic pandemic) {
     super.cancel(pandemic);
-    pandemic.infect(origin, strength, desease);
+    pandemic.gameState.addCube(origin, desease, strength);
+    pandemic.checkEradicated(desease);
   }
 
   public Desease getDesease() {

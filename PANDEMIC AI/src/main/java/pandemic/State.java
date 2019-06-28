@@ -1,22 +1,19 @@
 package pandemic;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import game.GameState;
 import pandemic.action.ActionSerie;
 import pandemic.action.GameAction;
 import pandemic.material.City;
 import pandemic.material.Desease;
 import pandemic.material.PlayedCharacter;
-import pandemic.material.card.Card;
 import pandemic.material.card.CityCard;
-import pandemic.material.card.Deck;
-import pandemic.material.card.EpidemicCard;
 import pandemic.material.card.Hand;
 import pandemic.material.card.PlayerCard;
 import pandemic.material.card.PlayerDeck;
@@ -26,8 +23,79 @@ import pandemic.util.GameUtil;
 
 public class State extends GameState<Properties> {
 
-  // Final
-  private static final Logger logger = LogManager.getLogger(State.class.getName());
+  public boolean equivalent(State other) {
+    if (!Arrays.equals(characterHand, other.characterHand)) {
+      return false;
+    }
+    if (!Arrays.equals(characterPositionMap, other.characterPositionMap)) {
+      return false;
+    }
+    if (!Arrays.equals(cityBuilt, other.cityBuilt)) {
+      return false;
+    }
+    if (!Arrays.deepEquals(cityCubeQuantity, other.cityCubeQuantity)) {
+      return false;
+    }
+    if (curedDeseaseCount != other.curedDeseaseCount) {
+      return false;
+    }
+    if (!Arrays.equals(curedDeseases, other.curedDeseases)) {
+      return false;
+    }
+    if (currentActionCount != other.currentActionCount) {
+      return false;
+    }
+    if (currentHand == null) {
+      if (other.currentHand != null) {
+        return false;
+      }
+    } else if (!currentHand.equals(other.currentHand)) {
+      return false;
+    }
+    if (!Arrays.equals(deseaseCubeReserve, other.deseaseCubeReserve)) {
+      return false;
+    }
+    if (eclosionCount != other.eclosionCount) {
+      return false;
+    }
+    if (eradicatedDeseaseCount != other.eradicatedDeseaseCount) {
+      return false;
+    }
+    if (!Arrays.equals(eradicatedDeseases, other.eradicatedDeseases)) {
+      return false;
+    }
+    if (gameStep != other.gameStep) {
+      return false;
+    }
+    if (playerDeck == null) {
+      if (other.playerDeck != null) {
+        return false;
+      }
+    } else if (!playerDeck.equivalent(other.playerDeck)) {
+      return false;
+    }
+    if (previousActionList == null) {
+      if (other.previousActionList != null) {
+        return false;
+      }
+    } else if (!previousActionList.equals(other.previousActionList)) {
+      return false;
+    }
+    if (propagationDeck == null) {
+      if (other.propagationDeck != null) {
+        return false;
+      }
+    } else if (!propagationDeck.equivalent(other.propagationDeck)) {
+      return false;
+    }
+    if (researchCenterCount != other.researchCenterCount) {
+      return false;
+    }
+    if (turnCount != other.turnCount) {
+      return false;
+    }
+    return true;
+  }
 
   PropagationDeck propagationDeck;
   PlayerDeck playerDeck;
@@ -116,6 +184,7 @@ public class State extends GameState<Properties> {
     int curedDeseaseCount;
     int eradicatedDeseaseCount;
     ActionSerie previousActionList;
+    ArrayList<CityCard> cityCardReserve;
 
     public Builder(Properties properties, City start) {
       super();
@@ -135,8 +204,10 @@ public class State extends GameState<Properties> {
       currentActionCount = gameProperties.maxActionCount;
       characterHand = new Hand[gameProperties.numberOfPlayers];
       characterPositionMap = new City[gameProperties.numberOfPlayers];
-      propagationDeck = new PropagationDeck(Reserve.getInstance().propagationCardReserve);
-      playerDeck = new PlayerDeck(Reserve.getInstance().playerCardReserve);
+      propagationDeck =
+          new PropagationDeck(properties.difficulty, Reserve.getInstance().propagationCardReserve);
+      cityCardReserve = new ArrayList<CityCard>(Reserve.getInstance().playerCardReserve);
+      Collections.shuffle(cityCardReserve);
 
       // Create players
 
@@ -243,18 +314,9 @@ public class State extends GameState<Properties> {
     public Builder deal() {
       for (final Hand hand : characterHand) {
         for (int i = 0; i < 6 - gameProperties.numberOfPlayers; i++) {
-          hand.add((CityCard) playerDeck.draw());
+          CityCard card = cityCardReserve.remove(0);
+          hand.add(card);
         }
-      }
-      return this;
-    }
-
-    public Builder split() {
-      final List<Deck<PlayerCard>> deckList = playerDeck.split(gameProperties.difficulty);
-      for (final Deck<PlayerCard> subdeck : deckList) {
-        subdeck.addOnTop(Reserve.getInstance().epidemicCardReserve);
-        subdeck.shuffle();
-        playerDeck.addOnTop(subdeck);
       }
       return this;
     }
@@ -264,7 +326,6 @@ public class State extends GameState<Properties> {
         for (int k = 0; k < 3; k++) {
           final PropagationCard card = propagationDeck.draw();
           cityCubeQuantity[card.getCity().id][card.getCity().getDesease().id] += i;
-          propagationDeck.discard(card);
         }
       }
       return this;
@@ -272,42 +333,43 @@ public class State extends GameState<Properties> {
 
     public static Builder randomStateBuilder() {
       final Properties gameProperties =
-          new Properties(1 + (int) (Math.random() * 4), 3 + (int) (Math.random() * 3));
+          new Properties(1 + GameUtil.random.nextInt(4), 3 + GameUtil.random.nextInt(3));
       final Builder builder =
           new Builder(gameProperties, GameUtil.getCity("Atlanta")).gameStep(Pandemic.GameStep.play);
 
-      builder.turnCount((int) (Math.random() * 24 + 1));
-      builder.eclosionCount((int) (Math.random() * gameProperties.maxEclosionCounter + 1));
-      builder.currentActionCount((int) (Math.random() * gameProperties.maxActionCount + 1));
-      builder.eclosionCount((int) (Math.random() * gameProperties.maxEclosionCounter + 1));
+      builder.turnCount(GameUtil.random.nextInt(24) + 1);
+      builder.eclosionCount(GameUtil.random.nextInt(gameProperties.maxEclosionCounter) + 1);
+      builder.currentActionCount(GameUtil.random.nextInt(gameProperties.maxActionCount) + 1);
+      builder.eclosionCount(GameUtil.random.nextInt(gameProperties.maxEclosionCounter) + 1);
 
       for (int i = 0; i < builder.curedDeseases.length; i++) {
-        if (Math.random() > 0.4f) {
+        if (GameUtil.random.nextDouble() > 0.4f) {
           builder.curedDeseases[i] = true;
           builder.curedDeseaseCount++;
-          if (Math.random() > 0.4f) {
+          if (GameUtil.random.nextDouble() > 0.4f) {
             builder.eradicatedDeseases[i] = true;
             builder.eradicatedDeseaseCount++;
           }
         }
       }
 
-      final int researchCenterCount = builder.researchCenterCount + (int) (Math.random()
-          * (1 + gameProperties.maxResearchCenterCounter - builder.researchCenterCount));
+      final int researchCenterCount = builder.researchCenterCount + GameUtil.random
+          .nextInt(1 + gameProperties.maxResearchCenterCounter - builder.researchCenterCount);
       for (int i = 1; i < researchCenterCount; i++) {
         final int cityId = (int) (Math.random() * gameProperties.map.size());
         if (cityId != GameUtil.getCity("Atlanta").id && !builder.cityBuilt[cityId]) {
           builder.cityBuilt[cityId] = true;
           builder.researchCenterCount++;
-          builder.playerDeck.removeAndDiscard(GameUtil.getCard(cityId));
+          builder.cityCardReserve.remove(GameUtil.getCard(cityId));
         }
       }
 
       for (final Desease desease : gameProperties.deseaseList) {
-        int cubeInPlay = (int) (Math.random() * (gameProperties.maxCubeCount + 1));
+        int cubeInPlay = GameUtil.random.nextInt(gameProperties.maxCubeCount + 1);
         while (cubeInPlay > 0) {
-          final City city = Reserve.getInstance().deseaseCityCardMap.get(desease).get(
-              (int) (Math.random() * Reserve.getInstance().deseaseCityCardMap.get(desease).size()));
+          final City city =
+              Reserve.getInstance().deseaseCityCardMap.get(desease).get(GameUtil.random
+                  .nextInt(Reserve.getInstance().deseaseCityCardMap.get(desease).size()));
           if (builder.cityCubeQuantity[city.id][desease.id] < 3) {
             builder.cityCubeQuantity[city.id][desease.id]++;
             builder.deseaseCubeReserve[desease.id]++;
@@ -318,7 +380,7 @@ public class State extends GameState<Properties> {
 
       for (int i = 0; i < builder.characterPositionMap.length; i++) {
         final Desease desease = gameProperties.deseaseList
-            .get((int) (Math.random() * gameProperties.deseaseList.size()));
+            .get(GameUtil.random.nextInt(gameProperties.deseaseList.size()));
         final City position = Reserve.getInstance().deseaseCityCardMap.get(desease).get(
             (int) (Math.random() * Reserve.getInstance().deseaseCityCardMap.get(desease).size()));
         builder.characterPositionMap[i] = position;
@@ -327,53 +389,43 @@ public class State extends GameState<Properties> {
           .currentHand(builder.characterHand[(int) (Math.random() * builder.characterHand.length)]);
 
       for (final Hand element : builder.characterHand) {
-        final int handSize = (int) (Math.random() * (gameProperties.maxHandSize + 1));
+        final int handSize = GameUtil.random.nextInt((gameProperties.maxHandSize + 1));
         int k = 0;
         while (k < handSize) {
-          final CityCard card = (CityCard) builder.playerDeck.draw();
-          if (card != null)
-            element.add(card);
-          k++;
+          final PlayerCard card = builder.cityCardReserve.remove(0);
+          if (card != null && card instanceof CityCard) {
+            element.add((CityCard) card);
+            k++;
+          }
         }
       }
-      builder.split();
-      final int epidemics = (int) (Math.random() * (builder.playerDeck.getTotalEpidemic() + 1));
-      int epidemicCounter = 0;
-      while (epidemicCounter < epidemics) {
-        final PlayerCard card = builder.playerDeck.draw();
-        builder.playerDeck.discard(card);
-        if (card instanceof EpidemicCard)
-          epidemicCounter++;
-      }
-      final int discardedCards = epidemics == 0 ? 0
-          : (int) (Math.random() * (builder.playerDeck.getSubdeckSize(epidemics - 1) + 1));
+
+      final int discardedCards = GameUtil.random.nextInt(builder.cityCardReserve.size() + 1);
       for (int i = 0; i < discardedCards; i++) {
-        final PlayerCard card = builder.playerDeck.draw();
-        builder.playerDeck.discard(card);
-        if (card instanceof EpidemicCard)
-          epidemicCounter++;
+        builder.cityCardReserve.remove(0);
       }
-      final int propagationDiscarded = (int) (Math.random() * (builder.propagationDeck.size() + 1)
-          * (gameProperties.propagationSpeed[builder.playerDeck.getEpidemicCounter()]
-              - gameProperties.propagationSpeed[0])
-          / gameProperties.propagationSpeed[gameProperties.propagationSpeed.length - 1]);
+
+      final int propagationDiscarded = GameUtil.random.nextInt(builder.propagationDeck.size() + 1);
       for (int i = 0; i < propagationDiscarded; i++) {
-        builder.propagationDeck.removeAndDiscard(builder.propagationDeck.draw());
+        builder.propagationDeck.draw();
       }
       return builder;
     }
 
     public static Builder startStateBuilder(Properties gameProperties) {
-      return new Builder(gameProperties, GameUtil.getCity("Atlanta")).deal().split().infect()
+      return new Builder(gameProperties, GameUtil.getCity("Atlanta")).deal().infect()
           .gameStep(Pandemic.GameStep.play);
     }
 
     public static Builder blankStateBuilder(Properties gameProperties) {
-      return new Builder(gameProperties, GameUtil.getCity("Atlanta")).split()
+      return new Builder(gameProperties, GameUtil.getCity("Atlanta"))
           .gameStep(Pandemic.GameStep.play);
     }
 
     public State build() {
+
+
+      playerDeck = new PlayerDeck(this.gameProperties.difficulty, this.cityCardReserve);
       return new State(this);
     }
   }
@@ -384,7 +436,7 @@ public class State extends GameState<Properties> {
   }
 
   protected int getPropagationSpeed() {
-    return gameProperties.getPropagationSpeed(playerDeck.getEpidemicCounter());
+    return gameProperties.getPropagationSpeed(playerDeck.getEpidemicCount());
   }
 
   public Pandemic.GameStep getGameStep() {
@@ -419,10 +471,6 @@ public class State extends GameState<Properties> {
 
   public void increaseEclosionCounter() {
     eclosionCount++;
-  }
-
-  public void increaseEpidemicCounter() {
-    playerDeck.increaseEpidemicCounter();
   }
 
   public void increaseTurnCounter() {
@@ -464,7 +512,7 @@ public class State extends GameState<Properties> {
   }
 
   public int getEpidemicCount() {
-    return playerDeck.getEpidemicCounter();
+    return playerDeck.getEpidemicCount();
   }
 
   public LinkedList<GameAction> getPreviousActionList() {
@@ -504,23 +552,39 @@ public class State extends GameState<Properties> {
   }
 
   public boolean eradicateDesease(Desease desease) {
-    eradicatedDeseaseCount++;
-    return eradicatedDeseases[desease.id] = Boolean.TRUE;
+    if (!eradicatedDeseases[desease.id]) {
+      eradicatedDeseaseCount++;
+      eradicatedDeseases[desease.id] = true;
+      return true;
+    }
+    return false;
   }
 
   public boolean unEradicateDesease(Desease desease) {
-    eradicatedDeseaseCount--;
-    return eradicatedDeseases[desease.id] = Boolean.FALSE;
+    if (eradicatedDeseases[desease.id]) {
+      eradicatedDeseaseCount--;
+      eradicatedDeseases[desease.id] = false;
+      return true;
+    }
+    return false;
   }
 
   public boolean cureDesease(Desease desease) {
-    curedDeseaseCount++;
-    return curedDeseases[desease.id] = Boolean.TRUE;
+    if (!curedDeseases[desease.id]) {
+      curedDeseaseCount++;
+      curedDeseases[desease.id] = true;
+      return true;
+    }
+    return false;
   }
 
   public boolean unCureDesease(Desease desease) {
-    curedDeseaseCount--;
-    return curedDeseases[desease.id] = Boolean.FALSE;
+    if (curedDeseases[desease.id]) {
+      curedDeseaseCount--;
+      curedDeseases[desease.id] = false;
+      return true;
+    }
+    return false;
   }
 
   public void decreaseCurrentActionCount(int i) {
@@ -597,8 +661,8 @@ public class State extends GameState<Properties> {
     state.playerDeck = playerDeck.duplicate();
 
     state.characterHand = new Hand[gameProperties.numberOfPlayers];
-    for (final Hand hand : characterHand) {
-      final Hand handClone = hand.duplicate();
+    for (Hand hand : characterHand) {
+      Hand handClone = hand.duplicate();
       state.characterHand[handClone.getCharacter().id] = handClone;
       if (hand == currentHand) {
         state.currentHand = handClone;
@@ -625,46 +689,17 @@ public class State extends GameState<Properties> {
     value = 0;
     value += (gameProperties.maxEclosionCounter - eclosionCount) * 500;
     value += 300 * gameProperties.map.size();
-    for (final Card propagationCard : propagationDeck.getDiscardPile()) {
-      switch (getCityCubeCount(((PropagationCard) propagationCard).getCity(),
-          ((PropagationCard) propagationCard).getCity().getDesease())) {
-        case 0:
-          break;
-        case 1:
-          value -= 40;
-          break;
-        case 2:
-          value -= 80;
-          break;
-        case 3:
-          value -= 160;
-          break;
-        default:
-          value -= 300;
-          break;
-      }
-    }
-
-    for (final LinkedList<PropagationCard> memory : propagationDeck.getMemories()) {
-      for (final PropagationCard memoryCard : memory) {
-        switch (getCityCubeCount(memoryCard.getCity(), memoryCard.getCity().getDesease())) {
-          case 0:
-            break;
-          case 1:
-            value -= 50;
-            break;
-          case 2:
-            value -= 100;
-            break;
-          case 3:
-            value -= 300;
-            break;
-          default:
-            value -= 300;
-            break;
-        }
-      }
-    }
+    /*
+     * for (final Card propagationCard : propagationDeck.getDiscardPile()) { switch
+     * (getCityCubeCount(((PropagationCard) propagationCard).getCity(), ((PropagationCard)
+     * propagationCard).getCity().getDesease())) { case 0: break; case 1: value -= 40; break; case
+     * 2: value -= 80; break; case 3: value -= 160; break; default: value -= 300; break; } }
+     * 
+     * for (final LinkedList<PropagationCard> memory : propagationDeck.getMemories()) { for (final
+     * PropagationCard memoryCard : memory) { switch (getCityCubeCount(memoryCard.getCity(),
+     * memoryCard.getCity().getDesease())) { case 0: break; case 1: value -= 50; break; case 2:
+     * value -= 100; break; case 3: value -= 300; break; default: value -= 300; break; } } }
+     */
 
     value += 1000;
     for (final Desease desease : gameProperties.deseaseList) {
@@ -724,5 +759,10 @@ public class State extends GameState<Properties> {
 
     }
     return value;
+  }
+
+  public PlayedCharacter getNextPlayer() {
+    return characterHand[(currentHand.getCharacter().id + 1) % gameProperties.numberOfPlayers]
+        .getCharacter();
   }
 }

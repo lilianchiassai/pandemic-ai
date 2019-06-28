@@ -19,7 +19,6 @@ import pandemic.action.GiveKnowledge;
 import pandemic.action.MoveAction;
 import pandemic.action.Pass;
 import pandemic.action.ReceiveKnowledge;
-import pandemic.action.ShareKnowledge;
 import pandemic.action.ShuttleFlight;
 import pandemic.action.StaticAction;
 import pandemic.action.Treat;
@@ -50,7 +49,8 @@ public class City implements Comparable<City> {
   private Map<Desease, List<Treat>> treatActionMap;
   private Map<Desease, List<Treat>> treatCuredActionMap;
   private Map<Desease, Set<Cure>> cureActionMap;
-  private Map<PlayedCharacter, ShareKnowledge> shareKnowledgeActionSet;
+  private Map<PlayedCharacter, ReceiveKnowledge> receiveKnowledgeActionSet;
+  private Map<PlayedCharacter, GiveKnowledge> giveKnowledgeActionSet;
 
   public Set<GameAction> allActions;
   public Set<MoveAction> allMoveActions;
@@ -81,7 +81,8 @@ public class City implements Comparable<City> {
     this.treatActionMap = new HashMap<Desease, List<Treat>>();
     this.treatCuredActionMap = new HashMap<Desease, List<Treat>>();
     this.cureActionMap = new HashMap<Desease, Set<Cure>>();
-    this.shareKnowledgeActionSet = new HashMap<PlayedCharacter, ShareKnowledge>();
+    this.giveKnowledgeActionSet = new HashMap<PlayedCharacter, GiveKnowledge>();
+    this.receiveKnowledgeActionSet = new HashMap<PlayedCharacter, ReceiveKnowledge>();
 
     this.allActions = new HashSet<GameAction>();
     this.allMoveActions = new HashSet<MoveAction>();
@@ -139,8 +140,8 @@ public class City implements Comparable<City> {
     }
 
     for (PlayedCharacter playedCharacter : characterReserve) {
-      this.shareKnowledgeActionSet.put(playedCharacter, new GiveKnowledge(this, playedCharacter));
-      this.shareKnowledgeActionSet.put(playedCharacter,
+      this.giveKnowledgeActionSet.put(playedCharacter, new GiveKnowledge(this, playedCharacter));
+      this.receiveKnowledgeActionSet.put(playedCharacter,
           new ReceiveKnowledge(this, playedCharacter));
     }
 
@@ -151,7 +152,10 @@ public class City implements Comparable<City> {
     this.allMoveActions.addAll(this.charterFlightActionSet.values());
 
     this.allStaticActions.add(this.buildAction);
-    this.allStaticActions.addAll(this.shareKnowledgeActionSet.values());
+    for (PlayedCharacter playedCharacter : characterReserve) {
+      this.allStaticActions.add(this.giveKnowledgeActionSet.get(playedCharacter));
+      this.allStaticActions.add(this.receiveKnowledgeActionSet.get(playedCharacter));
+    }
     for (Desease localDesease : cureActionMap.keySet()) {
       this.allStaticActions.addAll(cureActionMap.get(localDesease));
       this.allStaticActions.addAll(this.treatActionMap.get(localDesease));
@@ -259,8 +263,12 @@ public class City implements Comparable<City> {
     }
   }
 
-  public GameAction getShareKnowledge(PlayedCharacter otherPlayer) {
-    return this.shareKnowledgeActionSet.get(otherPlayer);
+  public GiveKnowledge getGiveKnowledge(PlayedCharacter otherPlayer) {
+    return this.giveKnowledgeActionSet.get(otherPlayer);
+  }
+
+  public ReceiveKnowledge getReceiveKnowledge(PlayedCharacter otherPlayer) {
+    return this.receiveKnowledgeActionSet.get(otherPlayer);
   }
 
   public GameAction getPass(State state) {
@@ -279,4 +287,5 @@ public class City implements Comparable<City> {
   public GameAction getCancel(State state) {
     return this.cancelAction;
   }
+
 }

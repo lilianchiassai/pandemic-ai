@@ -2,11 +2,12 @@ package pandemic.action;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import game.Move;
 import pandemic.LightGameStatus;
 import pandemic.Pandemic;
 import pandemic.material.City;
 
-public abstract class GameAction {
+public abstract class GameAction implements Move<Pandemic> {
 
   protected static Logger logger = LogManager.getLogger(GameAction.class.getName());
 
@@ -25,7 +26,8 @@ public abstract class GameAction {
   }
 
   public boolean perform(Pandemic pandemic) {
-    if (pandemic.gameState.getCurrentActionCount() - this.actionCost >= 0) {
+    if (pandemic.gameState.getCurrentPlayerPosition() == origin
+        && pandemic.gameState.getCurrentActionCount() - this.actionCost >= 0) {
       pandemic.gameState.addToActionList(this);
       pandemic.gameState.decreaseCurrentActionCount(this.actionCost);
       return true;

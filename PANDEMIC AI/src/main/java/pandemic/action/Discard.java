@@ -2,6 +2,7 @@ package pandemic.action;
 
 import pandemic.LightGameStatus;
 import pandemic.Pandemic;
+import pandemic.material.City;
 import pandemic.material.PlayedCharacter;
 import pandemic.material.card.Card;
 import pandemic.material.card.CityCard;
@@ -14,8 +15,8 @@ public class Discard extends GameAction {
   CityCard card;
   PlayedCharacter playedCharacter;
 
-  public Discard(PlayedCharacter character, CityCard playerCard) {
-    super(null);
+  public Discard(City origin, PlayedCharacter character, CityCard playerCard) {
+    super(origin);
     this.actionCost = 0;
     this.card = playerCard;
     this.playedCharacter = character;
@@ -30,15 +31,14 @@ public class Discard extends GameAction {
     if (canPerform(pandemic) && super.perform(pandemic)) {
       GameUtil.log(pandemic, GameAction.logger,
           pandemic.gameState.getCurrentPlayer().getName() + " discards " + card.getTitle() + ".");
-      return pandemic.gameState.getCharacterHand(playedCharacter)
-          .removeAndDiscard(pandemic.gameState, (CityCard) card);
+      return pandemic.gameState.getCharacterHand(playedCharacter).remove(card);
     }
     return false;
   }
 
   public void cancel(Pandemic pandemic) {
     pandemic.gameState.getCharacterHand(playedCharacter).add(card);
-    pandemic.gameState.getPlayerDeck().getDiscardPile().remove(card);
+    pandemic.gameState.getCurrentHand().add(card);
     super.cancel(pandemic);
   }
 
