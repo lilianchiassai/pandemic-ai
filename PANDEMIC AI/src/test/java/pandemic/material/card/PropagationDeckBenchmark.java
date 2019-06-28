@@ -8,19 +8,19 @@ import pandemic.BenchmarkTest;
 import pandemic.Reserve;
 import pandemic.util.GameUtil;
 
-public class PlayerDeckBenchmark extends BenchmarkTest {
+class PropagationDeckBenchmark extends BenchmarkTest {
 
   @State(Scope.Thread)
   public static class LocalState {
 
-    public PlayerDeck playerDeck;
+    public PropagationDeck propagationDeck;
 
     @Setup
     public void doSetup() {
-      playerDeck = new PlayerDeck(2 + GameUtil.random.nextInt(4),
-          Reserve.getInstance().getPlayerCardReserve());
+      propagationDeck = new PropagationDeck(2 + GameUtil.random.nextInt(4),
+          Reserve.getInstance().getPropagationCardReserve());
       for(int i = 0; i<10; i++) {
-        playerDeck.draw();
+        propagationDeck.draw();
       }
     }
 
@@ -28,11 +28,16 @@ public class PlayerDeckBenchmark extends BenchmarkTest {
 
   @Benchmark
   public void duplicate(LocalState localState) {
-    localState.playerDeck.duplicate();
+    localState.propagationDeck.duplicate();
   }
 
   @Benchmark
   public void draw(LocalState localState) {
-    localState.playerDeck.draw();
+    localState.propagationDeck.draw();
+  }
+  
+  @Benchmark
+  public void drawBottomAndIntensifies(LocalState localState) {
+    localState.propagationDeck.drawBottomAndIntensify();
   }
 }
